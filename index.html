@@ -4270,10 +4270,11 @@
 
       const cityTaskItems = mapMode.includes("-city") ? currentCityMapItems() : null;
       const mapItems = cityTaskItems || shopItems.filter(item => item.mapScope === mapMode && item.x && item.y);
-      mapItems.forEach(item => {
+      mapItems.forEach((item, index) => {
         const locked = !isUnlocked(item);
         const pin = document.createElement("button");
         const active = selectedRewardId === item.id;
+        const position = cityTaskItems ? cityTaskPosition(item, index) : item;
         pin.className = [
           "map-pin",
           cityTaskItems ? "task-bubble" : "",
@@ -4281,8 +4282,8 @@
           locked ? "locked" : "",
           active ? "active" : ""
         ].filter(Boolean).join(" ");
-        pin.style.setProperty("--x", `${item.x}%`);
-        pin.style.setProperty("--y", `${item.y}%`);
+        pin.style.setProperty("--x", `${position.x}%`);
+        pin.style.setProperty("--y", `${position.y}%`);
         pin.dataset.rewardId = item.id;
         pin.dataset.short = taskShortMark(item);
         pin.textContent = cityTaskItems ? "" : item.name.replace("城市卡", "").replace("徽章", "").replace("基金", "").replace("体验", "");
@@ -4473,6 +4474,41 @@
         .replace("体验", "")
         .replace("徽章", "")
         .replace("基金", "");
+    }
+
+    function cityTaskPosition(item, index) {
+      const city = journeyCities[currentJourneyIndex()];
+      const cityCard = journeyCityCard(city.id);
+      const custom = {
+        tuebingen: {
+          [cityCard?.id || "tuebingen-card"]: { x: 37, y: 56 },
+          "tuebingen-visit-1": { x: 57, y: 72 },
+          "tuebingen-visit-2": { x: 46, y: 36 },
+          "tuebingen-visit-3": { x: 67, y: 28 },
+          "neckar-punt": { x: 57, y: 72 },
+          "regional-ticket": { x: 18, y: 30 }
+        },
+        shanghai: {
+          [cityCard?.id || "shanghai-card"]: { x: 48, y: 58 },
+          "shanghai-visit-1": { x: 66, y: 52 },
+          "shanghai-visit-2": { x: 31, y: 70 },
+          "shanghai-visit-3": { x: 49, y: 34 },
+          "bund-walk": { x: 66, y: 52 },
+          "wukang-coffee": { x: 31, y: 70 },
+          "shanghai-flight": { x: 18, y: 22 }
+        }
+      };
+      const position = custom[city.id]?.[item.id];
+      if (position) return position;
+      const fallback = [
+        { x: 38, y: 56 },
+        { x: 58, y: 70 },
+        { x: 45, y: 36 },
+        { x: 68, y: 34 },
+        { x: 22, y: 30 },
+        { x: 74, y: 74 }
+      ];
+      return fallback[index % fallback.length];
     }
 
     function renderCurrentCityCard() {
