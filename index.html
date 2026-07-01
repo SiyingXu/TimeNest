@@ -1266,7 +1266,7 @@
     }
 
     .map-pin.task-bubble::after {
-      content: attr(data-short);
+      content: "";
       position: static;
       display: grid;
       place-items: center;
@@ -1275,8 +1275,8 @@
       border: 0;
       border-radius: 999px;
       background: rgba(100,116,139,.18);
-      color: #4b5563;
-      font-size: 9px;
+      color: transparent;
+      font-size: 0;
       font-weight: 950;
       transform: none;
     }
@@ -1303,12 +1303,13 @@
     }
 
     .map-pin.task-bubble.active::after {
+      content: "";
       display: grid;
       width: 18px;
       height: 18px;
       background: #94a3b8;
-      color: #fff;
-      font-size: 10px;
+      color: transparent;
+      font-size: 0;
     }
 
     .map-pin.task-bubble.active.owned::after {
