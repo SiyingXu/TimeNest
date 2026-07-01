@@ -1,11 +1,11 @@
-const CACHE_NAME = "timenest-pwa-v4";
+const CACHE_NAME = "timenest-pwa-v5";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./assets/app-icon-192.png",
-  "./assets/app-icon-512.png",
+  "./assets/app-icon-pig-192.png",
+  "./assets/app-icon-pig-512.png",
   "./assets/visual/card-pig-passport.svg",
   "./assets/visual/generated/world-map-handdrawn.png",
   "./assets/visual/generated/map-china-shanghai-handdrawn.png",
