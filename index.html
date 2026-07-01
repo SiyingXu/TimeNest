@@ -275,6 +275,54 @@
       bottom: 0;
     }
 
+    .now-line {
+      position: absolute;
+      left: 58px;
+      right: 7px;
+      top: var(--top);
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      color: #d92d20;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .now-line::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #d92d20;
+      box-shadow: 0 0 0 3px rgba(217,45,32,.12);
+    }
+
+    .now-line::after {
+      content: "";
+      height: 2px;
+      flex: 1;
+      border-radius: 99px;
+      background: #d92d20;
+      box-shadow: 0 1px 0 rgba(255,255,255,.8);
+    }
+
+    .timeline-empty {
+      position: absolute;
+      left: 74px;
+      right: 16px;
+      top: 14px;
+      z-index: 2;
+      border: 1px dashed #d8dee8;
+      border-radius: 8px;
+      background: rgba(255,255,255,.82);
+      color: var(--muted);
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     .plan-item {
       position: absolute;
       left: 8px;
@@ -328,6 +376,14 @@
       height: 28px;
       font-size: 12px;
       background: rgba(255,255,255,.78);
+    }
+
+    .plan-task-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #17644f;
+      font-weight: 900;
     }
 
     .compare-strip {
@@ -2234,6 +2290,7 @@
     let timerMode = "countdown";
     let editingPlanId = null;
     let editingTaskId = null;
+    let planningTaskId = null;
 
     let state = loadState();
     let timer = {
@@ -2265,6 +2322,7 @@
       parsed.wishlist ??= [];
       parsed.records ??= [];
       parsed.plans ??= [];
+      parsed.plans = parsed.plans.map(plan => ({ ...plan, taskId: plan.taskId || null }));
       parsed.history = (parsed.history || []).map(item => ({ ...item, date: item.date || todayKey }));
       if (parsed.date !== todayKey) {
         parsed.date = todayKey;
@@ -2367,12 +2425,14 @@
           <div class="task-name"></div>
             <div class="task-actions">
               <div class="task-reward">+${task.reward}</div>
+              <button class="icon-button" data-action="schedule" title="安排到时间轴">⏱</button>
               <button class="icon-button" data-action="edit" title="编辑">✎</button>
               <button class="icon-button" data-action="delete" title="删除">×</button>
             </div>
         `;
         row.querySelector(".task-name").textContent = task.name;
         row.querySelector('[data-action="toggle"]').addEventListener("click", () => toggleTask(task.id));
+        row.querySelector('[data-action="schedule"]').addEventListener("click", () => scheduleTask(task.id));
         row.querySelector('[data-action="edit"]').addEventListener("click", () => editTask(task.id));
         row.querySelector('[data-action="delete"]').addEventListener("click", () => deleteTask(task.id));
         root.appendChild(row);
@@ -2410,14 +2470,14 @@
       document.querySelector("#plannedMeter").style.width = `${planned / max * 100}%`;
       document.querySelector("#actualMeter").style.width = `${actual / max * 100}%`;
       root.innerHTML = "";
-      if (!state.plans.length) {
-        root.innerHTML = `<div class="empty">先安排今天的一段时间，晚上就能对比计划和完成。</div>`;
-        return;
-      }
       const colors = ["#e36b7f", "#4d7cc7", "#3da989", "#d99825", "#7c3aed", "#e0523f"];
       const timelineStart = 6 * 60;
       const timelineEnd = 24 * 60;
       const timelineMinutes = timelineEnd - timelineStart;
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const showNow = nowMinutes >= timelineStart && nowMinutes <= timelineEnd;
+      const nowTop = (nowMinutes - timelineStart) / timelineMinutes * 100;
       root.innerHTML = `
         <div class="day-timeline">
           ${Array.from({ length: 18 }, (_, index) => {
@@ -2430,10 +2490,13 @@
           `;
           }).join("")}
           <div class="timeline-events"></div>
+          ${showNow ? `<div class="now-line" style="--top:${nowTop}%"><span>现在 ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}</span></div>` : ""}
+          ${state.plans.length ? "" : `<div class="timeline-empty">先把任务安排进时间轴，今天会更像一张真正的日程表。</div>`}
         </div>
       `;
       const eventLayer = root.querySelector(".timeline-events");
       [...state.plans].sort((a, b) => a.start.localeCompare(b.start)).forEach((plan, index) => {
+        const linkedTask = plan.taskId ? state.tasks.find(task => task.id === plan.taskId) : null;
         const start = timeToMinutes(plan.start);
         const end = start + plan.minutes;
         const visibleStart = Math.max(start, timelineStart);
@@ -2451,10 +2514,10 @@
         row.innerHTML = `
           <div>
             <div class="plan-title"></div>
-            <div class="plan-meta">${plan.start}-${plan.end} · ${formatMinutes(plan.minutes)} · ${plan.done ? "已完成" : "计划中"}</div>
+            <div class="plan-meta">${plan.start}-${plan.end} · ${formatMinutes(plan.minutes)} · ${plan.done ? "已完成" : "计划中"}${linkedTask ? ` · <span class="plan-task-link">任务联动</span>` : ""}</div>
           </div>
           <div class="plan-actions">
-            <button class="icon-button" data-action="done" title="${plan.done ? "已完成" : "标记完成"}">${plan.done ? "✓" : ""}</button>
+            <button class="icon-button" data-action="done" title="${plan.done ? "取消完成" : "标记完成"}">${plan.done ? "✓" : ""}</button>
             <button class="icon-button" data-action="edit" title="编辑">✎</button>
             <button class="icon-button" data-action="delete" title="删除">×</button>
           </div>
@@ -3032,7 +3095,7 @@
       addCoins(task.reward, `完成「${task.name}」`, { kind: "task", taskId: task.id });
     }
 
-    function undoTask(task) {
+    function undoTask(task, options = {}) {
       task.done = false;
       state.todayDone = Math.max(0, state.todayDone - 1);
       const recordIndex = [...state.records].reverse().findIndex(record =>
@@ -3049,6 +3112,7 @@
         item.amount === refund && (item.text === removedRecord?.label || item.text === `完成「${task.name}」`)
       );
       if (historyIndex >= 0) state.history.splice(historyIndex, 1);
+      if (options.defer) return;
       saveState();
       render();
       showToast(`已取消完成：${task.name}`);
@@ -3093,9 +3157,42 @@
       render();
     }
 
+    function scheduleTask(id) {
+      const task = state.tasks.find(item => item.id === id);
+      if (!task) return;
+      planningTaskId = id;
+      editingPlanId = null;
+      const now = new Date();
+      const current = now.getHours() * 60 + now.getMinutes();
+      const rounded = Math.ceil(current / 30) * 30;
+      const startMinutes = Math.min(23 * 60, Math.max(6 * 60, rounded));
+      const endMinutes = Math.min(24 * 60, startMinutes + 60);
+      document.querySelector("#planTitle").value = task.name;
+      document.querySelector("#planStart").value = minutesToTime(startMinutes);
+      document.querySelector("#planEnd").value = minutesToTime(endMinutes);
+      document.querySelector("#addPlan").textContent = "安排到时间轴";
+      const note = document.querySelector("#planEditNote");
+      note.textContent = `正在安排任务：${task.name}`;
+      note.classList.add("active");
+      document.querySelector('[data-view="home-view"]')?.click();
+      document.querySelector("#planTitle").focus();
+      showToast("已带入任务，调整时间后加入计划。");
+    }
+
+    function minutesToTime(minutes) {
+      const normalized = Math.max(0, Math.min(24 * 60, minutes));
+      const hour = Math.floor(normalized / 60);
+      const minute = normalized % 60;
+      return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    }
+
     function completePlan(id) {
       const plan = state.plans.find(item => item.id === id);
-      if (!plan || plan.done) return;
+      if (!plan) return;
+      if (plan.done) {
+        undoPlan(plan);
+        return;
+      }
       plan.done = true;
       state.records.push({
         kind: "plan",
@@ -3107,15 +3204,56 @@
         ts: Date.now()
       });
       state.records = state.records.slice(-500);
+      const linkedTask = plan.taskId ? state.tasks.find(task => task.id === plan.taskId) : null;
+      if (linkedTask && !linkedTask.done) {
+        linkedTask.done = true;
+        state.todayDone += 1;
+        state.coins += linkedTask.reward;
+        state.history.unshift({
+          text: `完成「${linkedTask.name}」`,
+          amount: linkedTask.reward,
+          date: todayKey,
+          time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })
+        });
+        state.history = state.history.slice(0, 8);
+        state.records.push({
+          kind: "task",
+          taskId: linkedTask.id,
+          label: `完成「${linkedTask.name}」`,
+          coins: linkedTask.reward,
+          minutes: 0,
+          date: todayKey,
+          ts: Date.now(),
+          fromPlanId: plan.id
+        });
+        state.records = state.records.slice(-500);
+      }
       saveState();
       render();
-      showToast(`已完成计划：${plan.title}`);
+      showToast(linkedTask ? `已完成计划并同步任务：${plan.title}` : `已完成计划：${plan.title}`);
+    }
+
+    function undoPlan(plan) {
+      plan.done = false;
+      const linkedTask = plan.taskId ? state.tasks.find(task => task.id === plan.taskId) : null;
+      const completedTaskFromPlan = linkedTask && state.records.some(record =>
+        record.kind === "task" && record.taskId === linkedTask.id && record.fromPlanId === plan.id
+      );
+      state.records = state.records.filter(record => record.planId !== plan.id);
+      if (linkedTask) {
+        const hasOtherDonePlan = state.plans.some(item => item.id !== plan.id && item.taskId === linkedTask.id && item.done);
+        if (completedTaskFromPlan && !hasOtherDonePlan && linkedTask.done) undoTask(linkedTask, { defer: true });
+      }
+      saveState();
+      render();
+      showToast(linkedTask ? `已取消计划完成，并同步取消任务：${plan.title}` : `已取消计划完成：${plan.title}`);
     }
 
     function editPlan(id) {
       const plan = state.plans.find(item => item.id === id);
       if (!plan) return;
       editingPlanId = id;
+      planningTaskId = plan.taskId || null;
       document.querySelector("#planTitle").value = plan.title;
       document.querySelector("#planStart").value = plan.start;
       document.querySelector("#planEnd").value = plan.end;
@@ -3139,6 +3277,7 @@
 
     function resetPlanForm() {
       editingPlanId = null;
+      planningTaskId = null;
       document.querySelector("#planTitle").value = "";
       document.querySelector("#addPlan").textContent = "加入计划";
       const note = document.querySelector("#planEditNote");
@@ -3273,6 +3412,7 @@
           plan.start = start;
           plan.end = end;
           plan.minutes = minutes;
+          plan.taskId = planningTaskId;
           if (plan.done) {
             state.records = state.records.map(record => record.planId === plan.id
               ? { ...record, label: title, minutes }
@@ -3283,7 +3423,7 @@
         resetPlanForm();
         showToast(`已保存修改：${title}`);
       } else {
-        state.plans.push({ id: makeId(), title, start, end, minutes, done: false });
+        state.plans.push({ id: makeId(), title, start, end, minutes, done: false, taskId: planningTaskId });
         resetPlanForm();
         showToast(`已加入计划：${title}`);
       }
@@ -3348,6 +3488,8 @@
     }
 
     window.addEventListener("hashchange", openRouteFromHash);
+
+    setInterval(renderPlans, 60 * 1000);
 
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => {
