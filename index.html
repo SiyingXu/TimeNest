@@ -1317,6 +1317,116 @@
       gap: 8px;
     }
 
+    .journey-panel {
+      border: 1px solid rgba(111,78,45,.22);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(111,78,45,.08) 0 1px, transparent 1px 50%),
+        linear-gradient(180deg, #fffaf0, #fffdf8);
+      background-size: 16px 16px, auto;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.66);
+    }
+
+    .journey-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 10px;
+    }
+
+    .journey-head strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .journey-head span,
+    .journey-copy {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .journey-progress {
+      height: 9px;
+      border-radius: 99px;
+      background: #edf1f5;
+      overflow: hidden;
+    }
+
+    .journey-progress div {
+      height: 100%;
+      width: var(--progress);
+      border-radius: inherit;
+      background: linear-gradient(90deg, #e36b7f, #f0c55d, #3da989);
+    }
+
+    .journey-chapters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .journey-chapter {
+      flex: 0 0 132px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.82);
+      padding: 8px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .journey-chapter.active {
+      border-color: rgba(227,107,127,.48);
+      background: #fff1f4;
+    }
+
+    .journey-chapter strong {
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .journey-chapter span {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    .journey-city-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .journey-city {
+      flex: 0 0 auto;
+      border: 1px solid rgba(31,41,55,.12);
+      border-radius: 999px;
+      background: #fff;
+      color: #435064;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .journey-city.done {
+      color: #17644f;
+      background: #eef7f3;
+      border-color: #b7ded1;
+    }
+
+    .journey-city.current {
+      color: #7a3342;
+      background: #fff1f4;
+      border-color: rgba(227,107,127,.42);
+    }
+
     .travel-stat {
       border: 1px solid rgba(216, 222, 232, .85);
       border-radius: 8px;
@@ -2147,6 +2257,7 @@
           </div>
           <div class="world-map" id="worldMap" aria-label="可点击世界地图"></div>
           <div class="selected-card" id="selectedCard"></div>
+          <div class="journey-panel" id="journeyPanel"></div>
           <div class="travel-stats">
             <button class="travel-stat" id="cityShelfButton" type="button" title="打开城市卡书架"><strong id="cityCount">0</strong><span>城市卡</span></button>
             <div class="travel-stat"><strong id="ticketCount">0</strong><span>票据</span></div>
@@ -2282,6 +2393,177 @@
       { id: "coffee-wish", category: "wish", name: "河边咖啡愿望", price: 79, desc: "愿望商店里的小额犒赏，适合普通但完整的一天。", icon: "CAF", color: "#f7efe6", region: "任意城市", mapScope: "world", stamp: "CAFE", x: 52, y: 62, rarity: "wish", border: "rose", art: "pig", cardAsset: "assets/visual/card-pig-passport.svg", cardLine: "不必很贵，但要真的让人期待。" },
       { id: "museum-day", category: "wish", name: "博物馆半日愿望", price: 329, desc: "给未来半天留白，兑换一个真正出门的理由。", icon: "DAY", color: "#f0f7ff", region: "任意城市", mapScope: "world", stamp: "MUSE", x: 44, y: 55, rarity: "wish", border: "rose", art: "pig", cardAsset: "assets/visual/card-pig-passport.svg", cardLine: "把时间留给慢慢看的东西。" }
     ];
+
+    const journeyCities = [
+      { id: "tuebingen", name: "图宾根", country: "德国", chapter: "德国起点", x: 49, y: 39, visits: ["内卡河小船", "老城集市", "霍亨图宾根城堡"] },
+      { id: "stuttgart", name: "斯图加特", country: "德国", chapter: "德国起点", x: 48, y: 40, visits: ["奔驰博物馆", "国王大街", "威廉玛花园"] },
+      { id: "heidelberg", name: "海德堡", country: "德国", chapter: "德国起点", x: 47, y: 39, visits: ["海德堡城堡", "老桥", "哲学家小径"] },
+      { id: "munich", name: "慕尼黑", country: "德国", chapter: "德国起点", x: 49, y: 42, visits: ["玛利亚广场", "英国花园", "德意志博物馆"] },
+      { id: "salzburg", name: "萨尔茨堡", country: "奥地利", chapter: "中欧慢行", x: 50, y: 43, visits: ["老城", "莫扎特故居", "萨尔茨堡城堡"] },
+      { id: "vienna", name: "维也纳", country: "奥地利", chapter: "中欧慢行", x: 52, y: 42, visits: ["美泉宫", "国家歌剧院", "中央咖啡馆"] },
+      { id: "prague", name: "布拉格", country: "捷克", chapter: "中欧慢行", x: 51, y: 39, visits: ["查理大桥", "老城广场", "布拉格城堡"] },
+      { id: "budapest", name: "布达佩斯", country: "匈牙利", chapter: "中欧慢行", x: 53, y: 44, visits: ["多瑙河", "渔人堡", "塞切尼浴场"] },
+      { id: "krakow", name: "克拉科夫", country: "波兰", chapter: "欧洲西北", x: 53, y: 38, visits: ["老城广场", "瓦维尔城堡", "辛德勒工厂"] },
+      { id: "warsaw", name: "华沙", country: "波兰", chapter: "欧洲西北", x: 54, y: 36, visits: ["老城", "肖邦博物馆", "维斯瓦河"] },
+      { id: "berlin", name: "柏林", country: "德国", chapter: "欧洲西北", x: 50, y: 36, visits: ["博物馆岛", "勃兰登堡门", "东边画廊"] },
+      { id: "amsterdam", name: "阿姆斯特丹", country: "荷兰", chapter: "欧洲西北", x: 46, y: 35, visits: ["运河", "梵高博物馆", "花市"] },
+      { id: "brussels", name: "布鲁塞尔", country: "比利时", chapter: "欧洲西北", x: 45, y: 37, visits: ["大广场", "漫画墙", "巧克力店"] },
+      { id: "paris", name: "巴黎", country: "法国", chapter: "欧洲西北", x: 44, y: 40, visits: ["埃菲尔铁塔", "卢浮宫", "塞纳河"] },
+      { id: "london", name: "伦敦", country: "英国", chapter: "欧洲西北", x: 43, y: 35, visits: ["大英博物馆", "大本钟", "泰晤士河"] },
+      { id: "copenhagen", name: "哥本哈根", country: "丹麦", chapter: "北方慢行", x: 50, y: 31, visits: ["新港", "蒂沃利花园", "路易斯安那现代艺术馆"] },
+      { id: "stockholm", name: "斯德哥尔摩", country: "瑞典", chapter: "北方慢行", x: 55, y: 27, visits: ["老城", "瓦萨沉船博物馆", "市政厅"] },
+      { id: "oslo", name: "奥斯陆", country: "挪威", chapter: "北方慢行", x: 50, y: 26, visits: ["歌剧院", "蒙克美术馆", "维格兰雕塑公园"] },
+      { id: "bergen", name: "卑尔根", country: "挪威", chapter: "北方慢行", x: 47, y: 25, visits: ["布吕根木屋", "弗洛伊恩山", "峡湾船票"] },
+      { id: "tromso", name: "特罗姆瑟", country: "挪威", chapter: "北方慢行", x: 51, y: 17, visits: ["极光章", "北极大教堂", "缆车观景"] },
+      { id: "helsinki", name: "赫尔辛基", country: "芬兰", chapter: "北方慢行", x: 57, y: 28, visits: ["岩石教堂", "芬兰堡", "设计区"] },
+      { id: "reykjavik", name: "雷克雅未克", country: "冰岛", chapter: "北方远征", x: 34, y: 25, visits: ["蓝湖", "黄金圈", "极光远征"] },
+      { id: "barcelona", name: "巴塞罗那", country: "西班牙", chapter: "地中海", x: 43, y: 47, visits: ["圣家堂", "古埃尔公园", "哥特区"] },
+      { id: "milan", name: "米兰", country: "意大利", chapter: "地中海", x: 48, y: 45, visits: ["米兰大教堂", "斯福尔扎城堡", "运河区"] },
+      { id: "venice", name: "威尼斯", country: "意大利", chapter: "地中海", x: 50, y: 45, visits: ["圣马可广场", "里亚托桥", "贡多拉"] },
+      { id: "florence", name: "佛罗伦萨", country: "意大利", chapter: "地中海", x: 49, y: 48, visits: ["乌菲兹", "圣母百花大教堂", "美第奇小路"] },
+      { id: "rome", name: "罗马", country: "意大利", chapter: "地中海", x: 50, y: 51, visits: ["斗兽场", "万神殿", "梵蒂冈"] },
+      { id: "ljubljana", name: "卢布尔雅那", country: "斯洛文尼亚", chapter: "巴尔干", x: 51, y: 45, visits: ["龙桥", "城堡", "河岸集市"] },
+      { id: "zagreb", name: "萨格勒布", country: "克罗地亚", chapter: "巴尔干", x: 52, y: 46, visits: ["上城区", "圣马可教堂", "多拉茨市场"] },
+      { id: "sarajevo", name: "萨拉热窝", country: "波黑", chapter: "巴尔干", x: 53, y: 49, visits: ["老城", "拉丁桥", "山谷电车"] },
+      { id: "athens", name: "雅典", country: "希腊", chapter: "巴尔干", x: 56, y: 55, visits: ["卫城", "普拉卡", "国家考古博物馆"] },
+      { id: "istanbul", name: "伊斯坦布尔", country: "土耳其", chapter: "亚洲入口", x: 59, y: 52, visits: ["圣索菲亚", "蓝色清真寺", "博斯普鲁斯"] },
+      { id: "cappadocia", name: "卡帕多奇亚", country: "土耳其", chapter: "亚洲入口", x: 62, y: 52, visits: ["热气球", "地下城", "格雷梅露天博物馆"] },
+      { id: "tbilisi", name: "第比利斯", country: "格鲁吉亚", chapter: "亚洲入口", x: 65, y: 51, visits: ["老城", "硫磺浴场", "纳里卡拉要塞"] },
+      { id: "yerevan", name: "埃里温", country: "亚美尼亚", chapter: "亚洲入口", x: 66, y: 53, visits: ["共和国广场", "阶梯广场", "亚拉拉特视角"] },
+      { id: "samarkand", name: "撒马尔罕", country: "乌兹别克斯坦", chapter: "丝绸之路", x: 70, y: 50, visits: ["雷吉斯坦广场", "比比哈努姆", "丝路市集"] },
+      { id: "bukhara", name: "布哈拉", country: "乌兹别克斯坦", chapter: "丝绸之路", x: 69, y: 51, visits: ["方舟城堡", "清真寺", "旧城茶馆"] },
+      { id: "almaty", name: "阿拉木图", country: "哈萨克斯坦", chapter: "丝绸之路", x: 75, y: 47, visits: ["升天大教堂", "绿色巴扎", "雪山视角"] },
+      { id: "kashgar", name: "喀什", country: "中国", chapter: "丝绸之路", x: 78, y: 50, visits: ["老城", "艾提尕尔", "巴扎"] },
+      { id: "xian", name: "西安", country: "中国", chapter: "中国主线", x: 80, y: 51, visits: ["兵马俑", "城墙", "大雁塔"] },
+      { id: "chengdu", name: "成都", country: "中国", chapter: "中国主线", x: 79, y: 55, visits: ["熊猫基地", "宽窄巷子", "茶馆"] },
+      { id: "chongqing", name: "重庆", country: "中国", chapter: "中国主线", x: 81, y: 56, visits: ["洪崖洞", "长江索道", "山城步道"] },
+      { id: "beijing", name: "北京", country: "中国", chapter: "中国主线", x: 82, y: 47, visits: ["故宫", "长城", "颐和园"] },
+      { id: "shanghai", name: "上海", country: "中国", chapter: "中国主线", x: 84, y: 54, visits: ["外滩", "武康路", "上海博物馆"] },
+      { id: "hangzhou", name: "杭州", country: "中国", chapter: "中国主线", x: 83, y: 55, visits: ["西湖", "灵隐寺", "龙井村"] },
+      { id: "suzhou", name: "苏州", country: "中国", chapter: "中国主线", x: 84, y: 53, visits: ["拙政园", "平江路", "苏州博物馆"] },
+      { id: "hongkong", name: "香港", country: "中国", chapter: "中国主线", x: 82, y: 60, visits: ["维港", "太平山", "天星小轮"] },
+      { id: "seoul", name: "首尔", country: "韩国", chapter: "东亚东南亚", x: 86, y: 49, visits: ["景福宫", "汉江", "圣水洞"] },
+      { id: "kyoto", name: "京都", country: "日本", chapter: "东亚东南亚", x: 88, y: 52, visits: ["伏见稻荷", "清水寺", "鸭川"] },
+      { id: "tokyo", name: "东京", country: "日本", chapter: "东亚东南亚", x: 90, y: 51, visits: ["浅草", "上野", "涩谷"] },
+      { id: "taipei", name: "台北", country: "中国台湾", chapter: "东亚东南亚", x: 84, y: 59, visits: ["故宫博物院", "迪化街", "象山"] },
+      { id: "hanoi", name: "河内", country: "越南", chapter: "东亚东南亚", x: 79, y: 62, visits: ["还剑湖", "老城区", "文庙"] },
+      { id: "bangkok", name: "曼谷", country: "泰国", chapter: "东亚东南亚", x: 77, y: 66, visits: ["大皇宫", "郑王庙", "湄南河"] },
+      { id: "chiangmai", name: "清迈", country: "泰国", chapter: "东亚东南亚", x: 76, y: 64, visits: ["古城", "双龙寺", "夜市"] },
+      { id: "singapore", name: "新加坡", country: "新加坡", chapter: "东亚东南亚", x: 78, y: 73, visits: ["滨海湾花园", "鱼尾狮", "樟宜机场"] },
+      { id: "kualalumpur", name: "吉隆坡", country: "马来西亚", chapter: "南亚印度洋", x: 77, y: 71, visits: ["双子塔", "茨厂街", "黑风洞"] },
+      { id: "penang", name: "槟城", country: "马来西亚", chapter: "南亚印度洋", x: 76, y: 68, visits: ["乔治市", "壁画街", "姓氏桥"] },
+      { id: "bali", name: "巴厘岛", country: "印度尼西亚", chapter: "南亚印度洋", x: 80, y: 78, visits: ["乌布", "海神庙", "梯田"] },
+      { id: "colombo", name: "科伦坡", country: "斯里兰卡", chapter: "南亚印度洋", x: 71, y: 70, visits: ["海边火车", "加勒菲斯绿地", "旧城"] },
+      { id: "mumbai", name: "孟买", country: "印度", chapter: "南亚印度洋", x: 70, y: 64, visits: ["印度门", "海滨大道", "艺术区"] },
+      { id: "delhi", name: "德里", country: "印度", chapter: "南亚印度洋", x: 71, y: 59, visits: ["红堡", "胡马雍陵", "印度门"] },
+      { id: "jaipur", name: "斋浦尔", country: "印度", chapter: "南亚印度洋", x: 70, y: 60, visits: ["风之宫", "琥珀堡", "城市宫殿"] },
+      { id: "varanasi", name: "瓦拉纳西", country: "印度", chapter: "南亚印度洋", x: 73, y: 62, visits: ["恒河", "老城", "晨船"] },
+      { id: "sydney", name: "悉尼", country: "澳大利亚", chapter: "大洋洲太平洋", x: 87, y: 84, visits: ["歌剧院", "海港大桥", "邦迪海滩"] },
+      { id: "melbourne", name: "墨尔本", country: "澳大利亚", chapter: "大洋洲太平洋", x: 85, y: 87, visits: ["涂鸦巷", "维多利亚市场", "海岸公路"] },
+      { id: "cairns", name: "凯恩斯", country: "澳大利亚", chapter: "大洋洲太平洋", x: 84, y: 78, visits: ["大堡礁", "热带雨林", "库兰达"] },
+      { id: "auckland", name: "奥克兰", country: "新西兰", chapter: "大洋洲太平洋", x: 91, y: 88, visits: ["天空塔", "海港", "怀赫科岛"] },
+      { id: "queenstown", name: "皇后镇", country: "新西兰", chapter: "大洋洲太平洋", x: 91, y: 91, visits: ["瓦卡蒂普湖", "缆车", "峡湾愿望"] },
+      { id: "honolulu", name: "檀香山", country: "美国", chapter: "大洋洲太平洋", x: 13, y: 58, visits: ["威基基", "钻石头", "珍珠港"] },
+      { id: "sanfrancisco", name: "旧金山", country: "美国", chapter: "北美横穿", x: 17, y: 49, visits: ["金门桥", "电车", "渔人码头"] },
+      { id: "losangeles", name: "洛杉矶", country: "美国", chapter: "北美横穿", x: 17, y: 53, visits: ["格里菲斯", "盖蒂中心", "圣莫尼卡"] },
+      { id: "vancouver", name: "温哥华", country: "加拿大", chapter: "北美横穿", x: 17, y: 42, visits: ["斯坦利公园", "煤气镇", "海墙"] },
+      { id: "seattle", name: "西雅图", country: "美国", chapter: "北美横穿", x: 18, y: 44, visits: ["派克市场", "太空针塔", "咖啡章"] },
+      { id: "chicago", name: "芝加哥", country: "美国", chapter: "北美横穿", x: 27, y: 47, visits: ["千禧公园", "建筑游船", "艺术博物馆"] },
+      { id: "newyork", name: "纽约", country: "美国", chapter: "北美横穿", x: 34, y: 48, visits: ["中央公园", "大都会", "布鲁克林大桥"] },
+      { id: "boston", name: "波士顿", country: "美国", chapter: "北美横穿", x: 36, y: 46, visits: ["自由之路", "哈佛", "海港"] },
+      { id: "montreal", name: "蒙特利尔", country: "加拿大", chapter: "北美横穿", x: 34, y: 44, visits: ["老港", "圣母大教堂", "皇家山"] },
+      { id: "mexicocity", name: "墨西哥城", country: "墨西哥", chapter: "拉美回程", x: 25, y: 60, visits: ["人类学博物馆", "宪法广场", "科约阿坎"] },
+      { id: "lima", name: "利马", country: "秘鲁", chapter: "拉美回程", x: 31, y: 75, visits: ["老城", "米拉弗洛雷斯", "海岸悬崖"] },
+      { id: "cusco", name: "库斯科", country: "秘鲁", chapter: "拉美回程", x: 33, y: 76, visits: ["老城", "圣谷", "马丘比丘愿望"] },
+      { id: "santiago", name: "圣地亚哥", country: "智利", chapter: "拉美回程", x: 35, y: 84, visits: ["圣克里斯托瓦尔山", "中央市场", "安第斯视角"] },
+      { id: "buenosaires", name: "布宜诺斯艾利斯", country: "阿根廷", chapter: "拉美回程", x: 39, y: 84, visits: ["五月广场", "博卡", "雅典人书店"] },
+      { id: "rio", name: "里约", country: "巴西", chapter: "拉美回程", x: 43, y: 78, visits: ["基督像", "糖面包山", "科帕卡巴纳"] },
+      { id: "capetown", name: "开普敦", country: "南非", chapter: "非洲归航", x: 55, y: 86, visits: ["桌山", "好望角", "海滨"] },
+      { id: "marrakech", name: "马拉喀什", country: "摩洛哥", chapter: "非洲归航", x: 46, y: 56, visits: ["老城", "马若雷勒花园", "集市"] },
+      { id: "cairo", name: "开罗", country: "埃及", chapter: "非洲归航", x: 56, y: 58, visits: ["金字塔", "埃及博物馆", "尼罗河"] },
+      { id: "lisbon", name: "里斯本", country: "葡萄牙", chapter: "欧洲归航", x: 41, y: 49, visits: ["28 路电车", "贝伦塔", "阿尔法玛"] },
+      { id: "madrid", name: "马德里", country: "西班牙", chapter: "欧洲归航", x: 43, y: 48, visits: ["普拉多", "丽池公园", "马约尔广场"] },
+      { id: "zurich", name: "苏黎世", country: "瑞士", chapter: "欧洲归航", x: 47, y: 43, visits: ["老城", "湖边", "火车站票据"] },
+      { id: "homecoming", name: "图宾根回家章", country: "德国", chapter: "欧洲归航", x: 49, y: 39, visits: ["回到书桌", "整理护照", "毕业路线纪念"] }
+    ];
+
+    function cityCardId(cityId) {
+      return cityId === "tuebingen" ? "tuebingen-card"
+        : cityId === "stuttgart" ? "stuttgart-card"
+        : cityId === "shanghai" ? "shanghai-card"
+        : `${cityId}-card`;
+    }
+
+    function journeyStamp(city, index = 0) {
+      return `${city.id.slice(0, 3).toUpperCase()}${index || ""}`.slice(0, 6);
+    }
+
+    function routeCardAsset(city) {
+      if (city.id === "shanghai") return "assets/visual/generated/card-shanghai-handdrawn.png";
+      if (city.id === "tuebingen" || city.country === "德国" || city.chapter.includes("北方")) return "assets/visual/generated/card-tuebingen-handdrawn.png";
+      return "assets/visual/card-pig-passport.svg";
+    }
+
+    const journeyGeneratedItems = journeyCities.flatMap((city, index) => {
+      const previous = journeyCities[index - 1];
+      const cityItem = {
+        id: cityCardId(city.id),
+        category: "city",
+        name: `${city.name}城市卡`,
+        price: index === 0 ? 0 : 180 + Math.min(720, index * 18),
+        desc: `环球主线第 ${index + 1} 站：${city.country} · ${city.chapter}。完成本城任意 3 个游览章后才能前往下一站。`,
+        icon: journeyStamp(city),
+        color: index % 3 === 0 ? "#eff7f4" : index % 3 === 1 ? "#eef2ff" : "#fff7e8",
+        region: city.country,
+        mapScope: "world",
+        stamp: journeyStamp(city),
+        x: city.x,
+        y: city.y,
+        rarity: index === 0 ? "base" : index > 70 ? "epic" : index > 15 ? "rare" : "common",
+        border: index % 4 === 0 ? "green" : index % 4 === 1 ? "blue" : index % 4 === 2 ? "gold" : "rose",
+        art: city.id === "shanghai" ? "shanghai" : "tuebingen",
+        cardAsset: routeCardAsset(city),
+        cardLine: `${city.chapter}：${city.visits.join(" / ")}。`,
+        routeCityId: city.id,
+        routeIndex: index,
+        routePreviousCity: previous?.id || null
+      };
+      const visitItems = city.visits.map((visit, visitIndex) => ({
+        id: `${city.id}-visit-${visitIndex + 1}`,
+        category: visitIndex === 2 ? "wish" : "sight",
+        name: `${city.name} · ${visit}`,
+        price: 60 + visitIndex * 25 + Math.min(120, index * 2),
+        desc: `完成一段真实学习或计划后，给小猪护照盖下 ${city.name} 的「${visit}」章。`,
+        icon: visitIndex === 0 ? "VIEW" : visitIndex === 1 ? "MUSE" : "WISH",
+        color: visitIndex === 0 ? "#e9fbf8" : visitIndex === 1 ? "#f0f7ff" : "#fff2e8",
+        region: city.name,
+        mapScope: "world",
+        stamp: journeyStamp(city, visitIndex + 1),
+        x: Math.min(92, city.x + (visitIndex - 1) * 1.2),
+        y: Math.min(92, city.y + 2 + visitIndex * 1.2),
+        rarity: visitIndex === 2 ? "wish" : "common",
+        requires: cityCardId(city.id),
+        cityId: city.id,
+        routeIndex: index,
+        border: visitIndex === 0 ? "green" : visitIndex === 1 ? "blue" : "rose",
+        art: city.id === "shanghai" ? "shanghai" : "tuebingen",
+        cardAsset: routeCardAsset(city),
+        cardLine: `${city.name}游览章：${visit}。`
+      }));
+      return [cityItem, ...visitItems];
+    });
+
+    journeyGeneratedItems.forEach(item => {
+      const existing = shopItems.find(reward => reward.id === item.id);
+      if (existing) Object.assign(existing, item, { ...existing, routeCityId: item.routeCityId, routeIndex: item.routeIndex, routePreviousCity: item.routePreviousCity, cityId: existing.cityId || item.cityId });
+      else shopItems.push(item);
+    });
+
+    Object.assign(shopItems.find(item => item.id === "regional-ticket") || {}, { cityId: "tuebingen" });
+    Object.assign(shopItems.find(item => item.id === "neckar-punt") || {}, { cityId: "tuebingen" });
+    Object.assign(shopItems.find(item => item.id === "shanghai-flight") || {}, { cityId: "shanghai" });
+    Object.assign(shopItems.find(item => item.id === "bund-walk") || {}, { cityId: "shanghai" });
+    Object.assign(shopItems.find(item => item.id === "wukang-coffee") || {}, { cityId: "shanghai" });
 
     let activeCategory = "city";
     let activeStampCategory = "city";
@@ -2633,11 +2915,46 @@
       return state.ownedRewards.includes(item.id);
     }
 
+    function journeyCityById(cityId) {
+      return journeyCities.find(city => city.id === cityId);
+    }
+
+    function journeyCityCard(cityId) {
+      return shopItems.find(item => item.id === cityCardId(cityId));
+    }
+
+    function ownedVisitItems(cityId) {
+      return shopItems.filter(item => item.cityId === cityId && item.category !== "city" && isOwned(item));
+    }
+
+    function cityProgress(cityId) {
+      return Math.min(3, ownedVisitItems(cityId).length);
+    }
+
+    function isCityCompleted(cityId) {
+      return cityProgress(cityId) >= 3;
+    }
+
+    function currentJourneyIndex() {
+      const index = journeyCities.findIndex(city => !isCityCompleted(city.id));
+      return index === -1 ? journeyCities.length - 1 : index;
+    }
+
     function isUnlocked(item) {
+      if (item.routePreviousCity && !isCityCompleted(item.routePreviousCity)) return false;
+      if (item.cityId && item.category !== "city" && !state.ownedRewards.includes(cityCardId(item.cityId))) return false;
       return !item.requires || state.ownedRewards.includes(item.requires);
     }
 
     function unlockHint(item) {
+      if (item.routePreviousCity && !isCityCompleted(item.routePreviousCity)) {
+        const previous = journeyCityById(item.routePreviousCity);
+        return previous ? `先在「${previous.name}」完成 3 个游览章` : "先完成上一站";
+      }
+      if (item.cityId && item.category !== "city" && !state.ownedRewards.includes(cityCardId(item.cityId))) {
+        const city = journeyCityById(item.cityId);
+        return city ? `先解锁「${city.name}城市卡」` : "先解锁城市卡";
+      }
       const parent = shopItems.find(reward => reward.id === item.requires);
       return parent ? `先解锁「${parent.name}」` : "暂未解锁";
     }
@@ -2692,11 +3009,64 @@
       return "";
     }
 
+    function journeyChapters() {
+      return [...new Set(journeyCities.map(city => city.chapter))].map(name => {
+        const cities = journeyCities.filter(city => city.chapter === name);
+        const done = cities.filter(city => isCityCompleted(city.id)).length;
+        return { name, cities, done };
+      });
+    }
+
+    function renderJourneyPanel() {
+      const root = document.querySelector("#journeyPanel");
+      const currentIndex = currentJourneyIndex();
+      const current = journeyCities[currentIndex];
+      const next = journeyCities[currentIndex + 1];
+      const progress = Math.round(journeyCities.filter(city => isCityCompleted(city.id)).length / journeyCities.length * 100);
+      const currentProgress = cityProgress(current.id);
+      const chapters = journeyChapters();
+      const nearby = journeyCities.slice(Math.max(0, currentIndex - 3), Math.min(journeyCities.length, currentIndex + 5));
+      root.innerHTML = `
+        <div class="journey-head">
+          <div>
+            <strong>环球主线：${current.name}</strong>
+            <span>${current.country} · ${current.chapter} · 本城 ${currentProgress}/3 章</span>
+          </div>
+          <div class="map-chip">${progress}%</div>
+        </div>
+        <div class="journey-progress" aria-label="环球路线进度"><div style="--progress:${progress}%"></div></div>
+        <div class="journey-copy">${next ? `完成 ${current.name} 的 3 个游览章后，下一站开放：${next.name}。` : "环球主线已经回到图宾根，可以准备毕业纪念章。"}</div>
+        <div class="journey-chapters">
+          ${chapters.map(chapter => `
+            <div class="journey-chapter${chapter.cities.includes(current) ? " active" : ""}">
+              <strong>${chapter.name}</strong>
+              <span>${chapter.done}/${chapter.cities.length} 城完成</span>
+            </div>
+          `).join("")}
+        </div>
+        <div class="journey-city-strip">
+          ${nearby.map(city => `
+            <button class="journey-city${isCityCompleted(city.id) ? " done" : ""}${city.id === current.id ? " current" : ""}" data-city-id="${city.id}" type="button">
+              ${city.name} ${cityProgress(city.id)}/3
+            </button>
+          `).join("")}
+        </div>
+      `;
+      root.querySelectorAll("[data-city-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          const city = journeyCityById(button.dataset.cityId);
+          const card = city && journeyCityCard(city.id);
+          if (card) selectReward(card.id);
+        });
+      });
+    }
+
     function renderTravelMap() {
       document.querySelector("#travelBudget").textContent = `${state.coins} 金币`;
       document.querySelector("#cityCount").textContent = ownedRewardsBy("city").length;
       document.querySelector("#ticketCount").textContent = ownedRewardsBy("ticket").length;
       document.querySelector("#wishCount").textContent = ownedRewardsBy("wish").length;
+      renderJourneyPanel();
 
       const map = document.querySelector("#worldMap");
       const wasZooming = map.classList.contains("map-zooming");
@@ -2708,6 +3078,30 @@
       trail.innerHTML = layerText.map((label, index) => `<span class="${index === layerText.length - 1 ? "active" : ""}">${label}</span>`).join("");
       map.appendChild(trail);
       if (mapMode === "world") {
+        const currentIndex = currentJourneyIndex();
+        const currentCity = journeyCities[currentIndex];
+        const nextCity = journeyCities[currentIndex + 1];
+        const chapterWaypoints = journeyChapters().map(chapter => chapter.cities[0]);
+        [...chapterWaypoints, currentCity, nextCity]
+          .filter(Boolean)
+          .filter((city, index, cities) => cities.findIndex(item => item.id === city.id) === index)
+          .forEach(city => {
+          const item = journeyCityCard(city.id);
+          if (!item) return;
+          const pin = document.createElement("button");
+          pin.className = [
+            "map-pin",
+            isCityCompleted(city.id) ? "owned" : "",
+            city.id === currentCity.id ? "active" : "",
+            !isUnlocked(item) ? "locked" : ""
+          ].filter(Boolean).join(" ");
+          pin.style.setProperty("--x", `${city.x}%`);
+          pin.style.setProperty("--y", `${city.y}%`);
+          pin.textContent = city.id === currentCity.id ? `当前：${city.name}` : city.name;
+          pin.title = isUnlocked(item) ? `${city.chapter} · ${cityProgress(city.id)}/3` : unlockHint(item);
+          pin.addEventListener("click", () => selectReward(item.id));
+          map.appendChild(pin);
+        });
         [
           { id: "china", name: "中国", hint: isOwned(shopItems.find(item => item.id === "shanghai-card")) ? "上海已收集" : "点击进入上海", x: 73, y: 48 },
           { id: "germany", name: "德国", hint: "Base 图宾根", x: 49, y: 39 },
@@ -2767,16 +3161,19 @@
       const latest = [...state.ownedRewards].reverse()
         .map(id => shopItems.find(item => item.id === id))
         .find(Boolean);
-      const hasShanghai = state.ownedRewards.includes("shanghai-card");
+      const currentIndex = currentJourneyIndex();
+      const current = journeyCities[currentIndex];
+      const next = journeyCities[currentIndex + 1];
+      const currentProgress = cityProgress(current.id);
       document.querySelector("#pigStatus").textContent = latest
         ? `小猪最近收下：${latest.name}`
         : "小猪正在等第一张票";
-      document.querySelector("#pigTravelTitle").textContent = hasShanghai ? "小猪已抵达上海" : "小猪在图宾根整理行李";
-      document.querySelector("#pigTravelNote").textContent = hasShanghai
-        ? "下一步可以收集外滩章，或继续给机票基金分期存金币。"
-        : "先从德国 base 出发，点中国进入上海区域，解锁上海城市卡后会开放对应景点和票据。";
+      document.querySelector("#pigTravelTitle").textContent = `小猪正在 ${current.name}`;
+      document.querySelector("#pigTravelNote").textContent = next
+        ? `本城已盖 ${currentProgress}/3 章。盖满 3 章后，下一站开放：${next.name}。`
+        : "环球路线已经回到图宾根，小猪正在整理毕业纪念章。";
       document.querySelector("#pigLastStamp").textContent = latest ? `最近：${latest.stamp}` : "最近：空白";
-      document.querySelector("#pigNextStop").textContent = hasShanghai ? "下一站：外滩" : "下一站：上海";
+      document.querySelector("#pigNextStop").textContent = next ? `下一站：${next.name}` : "下一站：回家";
 
       const tabRoot = document.querySelector("#stampTabs");
       tabRoot.innerHTML = "";
@@ -2798,7 +3195,7 @@
       const stamps = shopItems.filter(item => activeStampCategory === "city"
         ? item.category === "city" || item.category === "ticket"
         : item.category === activeStampCategory
-      );
+      ).sort((a, b) => (a.routeIndex ?? 999) - (b.routeIndex ?? 999) || a.name.localeCompare(b.name, "zh-CN"));
       const colors = ["#178f72", "#2563eb", "#e0523f", "#1f2937", "#7c3aed", "#d24777", "#0f766e", "#b45309"];
       const album = document.querySelector("#stampAlbum");
       album.innerHTML = "";
@@ -2857,6 +3254,8 @@
           <span>${categoryLabel(item.category)}</span>
           <span>${rarityLabel(item)}</span>
           <span>护照章 ${item.stamp || item.icon}</span>
+          ${item.routeIndex !== undefined ? `<span>主线第 ${item.routeIndex + 1} 站</span>` : ""}
+          ${item.cityId ? `<span>本城 ${cityProgress(item.cityId)}/3 章</span>` : ""}
           ${item.installment ? `<span>基金 ${fundedAmount(item)} / ${item.price}</span>` : ""}
         </div>
         ${item.installment && !owned ? `<div class="card-progress" aria-label="基金进度"><div style="--progress:${progress}%"></div></div>` : ""}
@@ -2945,7 +3344,8 @@
     }
 
     function openCityShelf() {
-      const cities = shopItems.filter(item => item.category === "city");
+      const cities = shopItems.filter(item => item.category === "city")
+        .sort((a, b) => (a.routeIndex ?? 999) - (b.routeIndex ?? 999) || a.name.localeCompare(b.name, "zh-CN"));
       const ownedCount = cities.filter(item => isOwned(item)).length;
       const modal = document.querySelector("#cardModal");
       const rows = [];
@@ -3025,7 +3425,9 @@
 
       const root = document.querySelector("#shop");
       root.innerHTML = "";
-      shopItems.filter(item => item.category === activeCategory).forEach(item => {
+      shopItems.filter(item => item.category === activeCategory)
+        .sort((a, b) => (a.routeIndex ?? 999) - (b.routeIndex ?? 999) || a.name.localeCompare(b.name, "zh-CN"))
+        .forEach(item => {
         const owned = isOwned(item);
         const unlocked = isUnlocked(item);
         const actionText = rewardPriceLabel(item);
@@ -3041,6 +3443,8 @@
               <span>${categoryLabel(item.category)}</span>
               <span>${rarityLabel(item)}</span>
               <span>${owned ? "已收藏" : unlocked ? "可兑换" : "未解锁"}</span>
+              ${item.routeIndex !== undefined ? `<span>第 ${item.routeIndex + 1} 站</span>` : ""}
+              ${item.cityId ? `<span>${cityProgress(item.cityId)}/3 章</span>` : ""}
               ${item.installment ? `<span>基金 ${fundedAmount(item)} / ${item.price}</span>` : ""}
               ${state.wishlist.includes(item.id) ? `<span>想要</span>` : ""}
             </div>
@@ -3326,7 +3730,13 @@
       state.wishlist = state.wishlist.filter(id => id !== item.id);
       saveState();
       render();
-      showToast(`小猪盖下 ${item.stamp || item.icon} 章：${item.name}`);
+      if (item.cityId && isCityCompleted(item.cityId)) {
+        const city = journeyCityById(item.cityId);
+        const next = city ? journeyCities[journeyCities.findIndex(routeCity => routeCity.id === city.id) + 1] : null;
+        showToast(next ? `${city.name} 3 章完成，下一站开放：${next.name}` : `${city.name} 3 章完成，环球路线收官！`);
+      } else {
+        showToast(`小猪盖下 ${item.stamp || item.icon} 章：${item.name}`);
+      }
     }
 
     function updateTimerDisplay() {
