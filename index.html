@@ -1250,6 +1250,60 @@
       font-weight: 900;
     }
 
+    .map-pin.task-bubble {
+      min-width: 26px;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      font-size: 0;
+    }
+
+    .map-pin.task-bubble::before {
+      display: none;
+    }
+
+    .map-pin.task-bubble::after {
+      content: attr(data-short);
+      position: static;
+      display: grid;
+      place-items: center;
+      width: 14px;
+      height: 14px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(100,116,139,.18);
+      color: #4b5563;
+      font-size: 9px;
+      font-weight: 950;
+      transform: none;
+    }
+
+    .map-pin.task-bubble.owned::after {
+      content: "✓";
+      background: #3da989;
+      color: #fff;
+    }
+
+    .map-pin.task-bubble.active {
+      width: auto;
+      min-width: 70px;
+      height: auto;
+      border-radius: 8px;
+      padding: 7px 9px;
+      font-size: 12px;
+    }
+
+    .map-pin.task-bubble.active::before {
+      display: block;
+    }
+
+    .map-pin.task-bubble.active::after {
+      display: none;
+    }
+
     .card-top {
       display: flex;
       justify-content: space-between;
@@ -4181,24 +4235,6 @@
           pin.addEventListener("click", () => openJourneyCity(city));
           map.appendChild(pin);
         });
-        if (visualMode !== "world" && visualMode !== "chapter") {
-          currentCityItems().visits.forEach((item, index) => {
-            const pin = document.createElement("button");
-            const owned = isOwned(item);
-            const locked = !isUnlocked(item);
-            pin.className = [
-              "map-pin",
-              owned ? "owned" : "",
-              locked ? "locked" : ""
-            ].filter(Boolean).join(" ");
-            pin.style.setProperty("--x", `${22 + index * 24}%`);
-            pin.style.setProperty("--y", `${68 - index * 12}%`);
-            pin.textContent = item.name.replace(`${currentCity.name} · `, "");
-            pin.title = locked ? unlockHint(item) : item.name;
-            pin.addEventListener("click", () => selectReward(item.id, { stayOnMap: true }));
-            map.appendChild(pin);
-          });
-        }
         const caption = document.createElement("div");
         caption.className = "map-caption";
         caption.textContent = nextCity
@@ -4215,20 +4251,27 @@
       back.addEventListener("click", () => zoomMap(parentMapMode(mapMode)));
       map.appendChild(back);
 
-      shopItems.filter(item => item.mapScope === mapMode && item.x && item.y).forEach(item => {
+      const cityTaskItems = mapMode.includes("-city") ? currentCityMapItems() : null;
+      const mapItems = cityTaskItems || shopItems.filter(item => item.mapScope === mapMode && item.x && item.y);
+      mapItems.forEach(item => {
         const locked = !isUnlocked(item);
         const pin = document.createElement("button");
+        const active = selectedRewardId === item.id;
         pin.className = [
           "map-pin",
+          cityTaskItems ? "task-bubble" : "",
           isOwned(item) ? "owned" : "",
           locked ? "locked" : "",
-          selectedRewardId === item.id ? "active" : ""
+          active ? "active" : ""
         ].filter(Boolean).join(" ");
         pin.style.setProperty("--x", `${item.x}%`);
         pin.style.setProperty("--y", `${item.y}%`);
         pin.dataset.rewardId = item.id;
-        pin.textContent = item.name.replace("城市卡", "").replace("徽章", "").replace("基金", "").replace("体验", "");
-        pin.title = locked ? unlockHint(item) : item.name;
+        pin.dataset.short = taskShortMark(item);
+        pin.textContent = cityTaskItems
+          ? active ? cityTaskLabel(item, currentCity) : ""
+          : item.name.replace("城市卡", "").replace("徽章", "").replace("基金", "").replace("体验", "");
+        pin.title = locked ? unlockHint(item) : `${item.name}\n${item.cardLine || item.desc}`;
         pin.addEventListener("click", () => {
           selectReward(item.id, { stayOnMap: Boolean(item.zoomTo) });
           if (item.zoomTo) zoomMap(item.zoomTo);
@@ -4395,6 +4438,28 @@
       return { city, cityCard, visits };
     }
 
+    function currentCityMapItems() {
+      const { cityCard, visits } = currentCityItems();
+      const ticket = currentTravelTicket();
+      return [cityCard, ...visits, ticket].filter(Boolean);
+    }
+
+    function taskShortMark(item) {
+      if (item.category === "city") return "C";
+      if (item.category === "ticket") return "T";
+      if (item.category === "wish") return "W";
+      return "S";
+    }
+
+    function cityTaskLabel(item, city) {
+      return item.name
+        .replace(`${city.name} · `, "")
+        .replace("城市卡", "")
+        .replace("体验", "")
+        .replace("徽章", "")
+        .replace("基金", "");
+    }
+
     function renderCurrentCityCard() {
       const root = document.querySelector("#selectedCard");
       const { city, cityCard, visits } = currentCityItems();
@@ -4465,7 +4530,7 @@
         row.addEventListener("click", event => {
           if (!item) return;
           if (event.target.closest("button")) buyItem(item);
-          else showRewardDetail(item);
+          else selectReward(item.id, { stayOnMap: true });
         });
       });
       root.querySelector("[data-travel-ticket]")?.addEventListener("click", event => {
