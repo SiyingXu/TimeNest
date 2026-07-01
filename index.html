@@ -1531,6 +1531,116 @@
       border-color: rgba(227,107,127,.42);
     }
 
+    .route-overview {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .route-overview-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .route-overview-title strong {
+      font-size: 14px;
+    }
+
+    .route-overview-title span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .route-chapter-list {
+      display: grid;
+      gap: 8px;
+      max-height: 430px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .route-chapter-card {
+      border: 1px solid rgba(31,41,55,.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,.76);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .route-chapter-card.active {
+      border-color: rgba(227,107,127,.44);
+      background: #fff1f4;
+    }
+
+    .route-chapter-card.done {
+      border-color: rgba(42,121,103,.32);
+      background: #f1fff9;
+    }
+
+    .route-chapter-card.locked {
+      opacity: .62;
+    }
+
+    .route-chapter-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .route-chapter-head strong {
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .route-chapter-head span {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .route-city-chain {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .route-city-node {
+      border: 1px solid rgba(31,41,55,.12);
+      border-radius: 999px;
+      background: #fff;
+      color: #506070;
+      padding: 5px 7px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .route-city-node.done {
+      border-color: #b7ded1;
+      background: #eef7f3;
+      color: #17644f;
+    }
+
+    .route-city-node.current {
+      border-color: rgba(227,107,127,.46);
+      background: #ffe6eb;
+      color: #8e3047;
+    }
+
+    .route-city-node.locked {
+      opacity: .52;
+      filter: grayscale(.35);
+    }
+
+    .route-arrow {
+      color: #9aa4b2;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
     .current-city-card {
       border: 1px solid rgba(227,107,127,.24);
       border-radius: 8px;
@@ -3385,6 +3495,30 @@
             </button>
           `).join("")}
         </div>
+        <div class="route-overview">
+          <div class="route-overview-title">
+            <strong>章节目录与完整路线</strong>
+            <span>从图宾根出发 · ${chapters.length} 章 · ${journeyCities.length} 城</span>
+          </div>
+          <div class="route-chapter-list" aria-label="完整环球路线目录">
+            ${chapters.map(chapter => `
+              <div class="route-chapter-card${chapter.active ? " active" : ""}${chapter.completed ? " done" : ""}${chapter.unlocked ? "" : " locked"}">
+                <div class="route-chapter-head">
+                  <strong>${chapter.index + 1}. ${chapter.name}</strong>
+                  <span>${chapter.done}/${chapter.cities.length} 城</span>
+                </div>
+                <div class="route-city-chain">
+                  ${chapter.cities.map((city, cityIndex) => `
+                    ${cityIndex ? `<span class="route-arrow">→</span>` : ""}
+                    <button class="route-city-node${state.travel.arrivedCities.includes(city.id) ? " done" : ""}${city.id === current.id ? " current" : ""}${chapter.unlocked ? "" : " locked"}" data-route-city="${city.id}" type="button">
+                      ${city.name}
+                    </button>
+                  `).join("")}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
         <div class="journey-city-strip">
           ${nearby.map(city => `
             <button class="journey-city${state.travel.arrivedCities.includes(city.id) ? " done" : ""}${city.id === current.id ? " current" : ""}" data-city-id="${city.id}" type="button">
@@ -3396,6 +3530,13 @@
       root.querySelectorAll("[data-city-id]").forEach(button => {
         button.addEventListener("click", () => {
           const city = journeyCityById(button.dataset.cityId);
+          const card = city && journeyCityCard(city.id);
+          if (card) selectReward(card.id);
+        });
+      });
+      root.querySelectorAll("[data-route-city]").forEach(button => {
+        button.addEventListener("click", () => {
+          const city = journeyCityById(button.dataset.routeCity);
           const card = city && journeyCityCard(city.id);
           if (card) selectReward(card.id);
         });
