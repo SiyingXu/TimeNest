@@ -1,4 +1,4 @@
-const CACHE_NAME = "timenest-pwa-v21";
+const CACHE_NAME = "timenest-pwa-v22";
 
 const APP_SHELL = [
   "./",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./assets/visual/card-pig-passport.svg",
   "./assets/visual/generated/world-map-handdrawn.png",
   "./assets/visual/generated/map-china-shanghai-handdrawn.png",
+  "./assets/visual/generated/map-germany-route-handdrawn.png",
   "./assets/visual/generated/map-germany-tuebingen-handdrawn.png",
   "./assets/visual/generated/map-shanghai-city-handdrawn.png",
   "./assets/visual/generated/map-tuebingen-city-handdrawn.png",

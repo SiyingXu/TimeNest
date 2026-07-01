@@ -697,7 +697,7 @@
       background:
         linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.24)),
         radial-gradient(circle at 18% 18%, rgba(255,255,255,.48), transparent 18%),
-        url("assets/visual/generated/map-germany-tuebingen-handdrawn.png") center / cover no-repeat,
+        url("assets/visual/generated/map-germany-route-handdrawn.png") center / cover no-repeat,
         linear-gradient(135deg, #d8edf1 0%, #f8f2df 52%, #eef6ef 100%);
     }
 
@@ -894,6 +894,25 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .map-chapter .map-pin.compact {
+      min-width: 24px;
+      min-height: 24px;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      padding: 0;
+    }
+
+    .map-chapter .map-pin.compact .node-name {
+      display: none;
+    }
+
+    .map-chapter .map-pin.compact .node-mark {
+      width: 14px;
+      height: 14px;
+      font-size: 0;
     }
 
     .map-chapter .map-pin.owned .node-mark,
@@ -3191,12 +3210,21 @@
 
     const journeyCities = [
       { id: "tuebingen", name: "图宾根", country: "德国", chapter: "德国起点", x: 49, y: 39, visits: ["内卡河小船", "老城集市", "霍亨图宾根城堡"] },
+      { id: "freiburg", name: "弗赖堡", country: "德国", chapter: "德国起点", x: 46, y: 42, visits: ["明斯特大教堂", "小溪水道", "黑森林入口"] },
       { id: "stuttgart", name: "斯图加特", country: "德国", chapter: "德国起点", x: 48, y: 40, visits: ["奔驰博物馆", "国王大街", "威廉玛花园"] },
       { id: "heidelberg", name: "海德堡", country: "德国", chapter: "德国起点", x: 47, y: 39, visits: ["海德堡城堡", "老桥", "哲学家小径"] },
-      { id: "freiburg", name: "弗赖堡", country: "德国", chapter: "德国起点", x: 46, y: 42, visits: ["明斯特大教堂", "小溪水道", "黑森林入口"] },
-      { id: "ulm", name: "乌尔姆", country: "德国", chapter: "德国起点", x: 49, y: 41, visits: ["乌尔姆大教堂", "渔人区", "多瑙河岸"] },
-      { id: "rothenburg", name: "罗滕堡", country: "德国", chapter: "德国起点", x: 50, y: 39, visits: ["城墙步道", "普伦莱因", "圣诞博物馆"] },
+      { id: "frankfurt", name: "法兰克福", country: "德国", chapter: "德国起点", x: 47, y: 38, visits: ["美因河岸", "施泰德博物馆", "罗马广场"] },
+      { id: "cologne", name: "科隆", country: "德国", chapter: "德国起点", x: 46, y: 37, visits: ["科隆大教堂", "霍亨索伦桥", "莱茵河畔"] },
+      { id: "aachen", name: "亚琛", country: "德国", chapter: "德国起点", x: 45, y: 37, visits: ["亚琛大教堂", "温泉小路", "查理曼中心"] },
+      { id: "bremen", name: "不来梅", country: "德国", chapter: "德国起点", x: 48, y: 34, visits: ["市政厅", "不来梅乐队雕像", "施诺尔街区"] },
+      { id: "hamburg", name: "汉堡", country: "德国", chapter: "德国起点", x: 49, y: 32, visits: ["仓库城", "易北爱乐厅", "港口渡轮"] },
+      { id: "lubeck", name: "吕贝克", country: "德国", chapter: "德国起点", x: 50, y: 31, visits: ["霍尔斯滕门", "老城岛", "杏仁糖小店"] },
+      { id: "berlin", name: "柏林", country: "德国", chapter: "德国起点", x: 52, y: 36, visits: ["博物馆岛", "勃兰登堡门", "东边画廊"] },
+      { id: "dresden", name: "德累斯顿", country: "德国", chapter: "德国起点", x: 53, y: 39, visits: ["圣母教堂", "茨温格宫", "易北河阶地"] },
+      { id: "leipzig", name: "莱比锡", country: "德国", chapter: "德国起点", x: 52, y: 38, visits: ["托马斯教堂", "棉纺厂", "旧市政厅"] },
       { id: "nuremberg", name: "纽伦堡", country: "德国", chapter: "德国起点", x: 51, y: 38, visits: ["皇帝堡", "主集市广场", "玩具博物馆"] },
+      { id: "rothenburg", name: "罗滕堡", country: "德国", chapter: "德国起点", x: 50, y: 39, visits: ["城墙步道", "普伦莱因", "圣诞博物馆"] },
+      { id: "ulm", name: "乌尔姆", country: "德国", chapter: "德国起点", x: 49, y: 41, visits: ["乌尔姆大教堂", "渔人区", "多瑙河岸"] },
       { id: "munich", name: "慕尼黑", country: "德国", chapter: "德国起点", x: 49, y: 42, visits: ["玛利亚广场", "英国花园", "德意志博物馆"] },
       { id: "fussen", name: "菲森", country: "德国", chapter: "德国起点", x: 49, y: 43, visits: ["新天鹅堡", "阿尔卑斯湖", "老城街角"] },
       { id: "salzburg", name: "萨尔茨堡", country: "奥地利", chapter: "中欧慢行", x: 50, y: 43, visits: ["老城", "莫扎特故居", "萨尔茨堡城堡"] },
@@ -3205,7 +3233,6 @@
       { id: "budapest", name: "布达佩斯", country: "匈牙利", chapter: "中欧慢行", x: 53, y: 44, visits: ["多瑙河", "渔人堡", "塞切尼浴场"] },
       { id: "krakow", name: "克拉科夫", country: "波兰", chapter: "欧洲西北", x: 53, y: 38, visits: ["老城广场", "瓦维尔城堡", "辛德勒工厂"] },
       { id: "warsaw", name: "华沙", country: "波兰", chapter: "欧洲西北", x: 54, y: 36, visits: ["老城", "肖邦博物馆", "维斯瓦河"] },
-      { id: "berlin", name: "柏林", country: "德国", chapter: "欧洲西北", x: 50, y: 36, visits: ["博物馆岛", "勃兰登堡门", "东边画廊"] },
       { id: "amsterdam", name: "阿姆斯特丹", country: "荷兰", chapter: "欧洲西北", x: 46, y: 35, visits: ["运河", "梵高博物馆", "花市"] },
       { id: "brussels", name: "布鲁塞尔", country: "比利时", chapter: "欧洲西北", x: 45, y: 37, visits: ["大广场", "漫画墙", "巧克力店"] },
       { id: "paris", name: "巴黎", country: "法国", chapter: "欧洲西北", x: 44, y: 40, visits: ["埃菲尔铁塔", "卢浮宫", "塞纳河"] },
@@ -3940,15 +3967,24 @@
     function chapterCityPosition(chapter, city) {
       const custom = {
         "德国起点": {
-          tuebingen: { x: 30, y: 67 },
-          stuttgart: { x: 36, y: 51 },
-          heidelberg: { x: 28, y: 31 },
-          freiburg: { x: 17, y: 77 },
-          ulm: { x: 48, y: 67 },
-          rothenburg: { x: 56, y: 43 },
-          nuremberg: { x: 68, y: 35 },
-          munich: { x: 72, y: 72 },
-          fussen: { x: 61, y: 88 }
+          lubeck: { x: 52, y: 12 },
+          hamburg: { x: 48, y: 18 },
+          bremen: { x: 39, y: 25 },
+          berlin: { x: 68, y: 32 },
+          leipzig: { x: 61, y: 47 },
+          dresden: { x: 74, y: 51 },
+          aachen: { x: 12, y: 51 },
+          cologne: { x: 18, y: 51 },
+          frankfurt: { x: 31, y: 61 },
+          heidelberg: { x: 34, y: 70 },
+          stuttgart: { x: 40, y: 79 },
+          tuebingen: { x: 39, y: 86 },
+          freiburg: { x: 24, y: 89 },
+          ulm: { x: 50, y: 82 },
+          rothenburg: { x: 52, y: 69 },
+          nuremberg: { x: 60, y: 65 },
+          munich: { x: 64, y: 86 },
+          fussen: { x: 58, y: 94 }
         }
       };
       if (custom[chapter.name]?.[city.id]) return custom[chapter.name][city.id];
@@ -3976,7 +4012,7 @@
     function chapterMapArtwork(chapter) {
       if (chapter?.name !== "德国起点") return "";
       return `
-        <img class="chapter-map-image" src="assets/visual/generated/map-germany-tuebingen-handdrawn.png" alt="" aria-hidden="true">
+        <img class="chapter-map-image" src="assets/visual/generated/map-germany-route-handdrawn.png" alt="" aria-hidden="true">
       `;
     }
 
@@ -4127,6 +4163,7 @@
           const pin = document.createElement("button");
           pin.className = [
             "map-pin",
+            city.id === currentCity.id ? "" : "compact",
             state.travel.arrivedCities.includes(city.id) ? "owned" : "",
             state.travel.arrivedCities.includes(city.id) && city.id !== currentCity.id ? "completed-city" : "",
             city.id === currentCity.id ? "active" : "",
@@ -4449,6 +4486,10 @@
       } else if (mode === "china") {
         mapMode = "china";
         selectReward("shanghai-card");
+      } else if (mode === "germany" && state.travel.currentCityId === "tuebingen") {
+        mapMode = "tuebingen-city";
+        renderTravelMap();
+        renderShop();
       } else if (mode === "germany") {
         mapMode = "germany";
         selectReward("tuebingen-card");
@@ -4598,11 +4639,10 @@
       modal.querySelectorAll("[data-chapter-city]").forEach(button => {
         button.addEventListener("click", () => {
           const city = journeyCityById(button.dataset.chapterCity);
-          const card = city && journeyCityCard(city.id);
-          if (!card) return;
+          if (!city) return;
           closeCardPreview();
-          selectReward(card.id);
-          showToast(`已定位到：${city.name}城市卡`);
+          openJourneyCity(city);
+          showToast(city.id === state.travel.currentCityId ? `已进入：${city.name}城市探索` : `已定位到：${city.name}城市卡`);
         });
       });
       modal.addEventListener("click", event => {
