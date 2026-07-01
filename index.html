@@ -833,13 +833,14 @@
       position: absolute;
       left: 12px;
       bottom: 12px;
-      z-index: 4;
+      z-index: 3;
       max-width: 178px;
       border: 1px solid rgba(31,41,55,.1);
       border-radius: 8px;
       background: rgba(255,255,255,.78);
       padding: 8px 10px;
       box-shadow: 0 10px 24px rgba(42,50,63,.1);
+      pointer-events: none;
     }
 
     .chapter-badge strong {
@@ -856,6 +857,7 @@
     }
 
     .map-chapter .map-pin {
+      z-index: 5;
       min-width: 50px;
       min-height: 50px;
       border-radius: 16px;
@@ -1138,6 +1140,7 @@
       padding: 7px 9px;
       font-size: 12px;
       font-weight: 800;
+      pointer-events: none;
     }
 
     .selected-card {
@@ -3893,7 +3896,7 @@
 
     function parentMapMode(mode) {
       if (mode === "shanghai-city") return "china";
-      if (mode === "tuebingen-city") return "germany";
+      if (mode === "tuebingen-city") return "world";
       return "world";
     }
 
@@ -4202,13 +4205,13 @@
           ? `${chapter?.name || currentCity.chapter} · 盖满 3 章并买票前往 ${nextCity.name}`
           : "环球路线收官";
         map.appendChild(caption);
-        renderCurrentCityCard();
+        renderCurrentRouteCard();
         return;
       }
 
       const back = document.createElement("button");
       back.className = "map-back";
-      back.textContent = mapMode.includes("-city") ? "< 区域" : "< 世界";
+      back.textContent = mapMode === "tuebingen-city" ? "< 德国路线" : mapMode.includes("-city") ? "< 区域" : "< 世界";
       back.addEventListener("click", () => zoomMap(parentMapMode(mapMode)));
       map.appendChild(back);
 
@@ -4237,7 +4240,8 @@
       caption.textContent = captionFor(mapMode);
       map.appendChild(caption);
 
-      renderSelectedCard();
+      if (mapMode.includes("-city")) renderCurrentCityCard();
+      else renderSelectedCard();
     }
 
     function renderPassport() {
@@ -4351,6 +4355,34 @@
         openCardPreview(item);
       });
       document.querySelector("#cardBuyButton").addEventListener("click", () => buyItem(item));
+    }
+
+    function renderCurrentRouteCard() {
+      const root = document.querySelector("#selectedCard");
+      const currentIndex = currentJourneyIndex();
+      const current = journeyCities[currentIndex];
+      const next = journeyCities[currentIndex + 1];
+      const progress = cityProgress(current.id);
+      const chapter = currentChapter();
+      const cityMode = cityVisualMapMode(current.id);
+      root.className = "selected-card route-summary-card";
+      root.style.setProperty("--card-color", "#fffaf0");
+      root.style.setProperty("--card-poster", "none");
+      root.innerHTML = `
+        <div class="journey-head">
+          <div>
+            <h3>${current.name} · 章节地图</h3>
+            <p>${chapter?.name || current.chapter} · 本城 ${progress}/3 章 · ${next ? `下一站 ${next.name}` : "环球路线收官"}</p>
+          </div>
+          <div class="map-chip">${chapter?.done || 0}/${chapter?.cities.length || 1}</div>
+        </div>
+        <div class="journey-progress" aria-label="当前城市进度"><div style="--progress:${progress / 3 * 100}%"></div></div>
+        <p class="journey-copy">地图用于查看德国章节路线。点击当前城市或下方按钮进入城市探索后，再兑换本城游览章和交通票。</p>
+        <div class="card-actions">
+          <button class="primary" id="enterCurrentCityButton" type="button">${cityMode !== "world" ? `进入${current.name}城市探索` : "查看当前城市"}</button>
+        </div>
+      `;
+      document.querySelector("#enterCurrentCityButton").addEventListener("click", () => openJourneyCity(current));
     }
 
     function currentCityItems() {
