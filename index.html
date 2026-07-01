@@ -4667,7 +4667,7 @@
       if (item) {
         activeCategory = item.category;
         if (isMapMode(item.mapScope) && !options.stayOnMap) mapMode = item.mapScope;
-        if (item.mapScope === "world") mapMode = "world";
+        if (item.mapScope === "world" && !options.stayOnMap) mapMode = "world";
       }
       renderTravelMap();
       renderShop();
