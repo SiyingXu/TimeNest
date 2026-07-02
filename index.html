@@ -5416,7 +5416,7 @@
         row.addEventListener("click", event => {
           if (!item) return;
           if (isOwned(item)) {
-            selectReward(item.id, { stayOnMap: true });
+            selectedRewardId = item.id;
             openCardPreview(item);
             return;
           }
