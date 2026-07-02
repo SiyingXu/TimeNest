@@ -141,6 +141,7 @@
     }
 
     .panel {
+      position: relative;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -479,13 +480,14 @@
 
     .task {
       display: grid;
-      grid-template-columns: 42px 1fr auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      gap: 10px;
+      gap: 9px;
       padding: 10px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
+      cursor: pointer;
     }
 
     .task.editing {
@@ -515,7 +517,10 @@
 
     .task-name {
       font-weight: 750;
-      overflow-wrap: anywhere;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .task-reward {
@@ -535,6 +540,39 @@
       width: 34px;
       height: 34px;
       font-size: 13px;
+    }
+
+    .task-menu {
+      position: absolute;
+      left: min(var(--menu-x), calc(100% - 142px));
+      top: var(--menu-y);
+      z-index: 12;
+      display: grid;
+      min-width: 126px;
+      overflow: hidden;
+      border: 1px solid rgba(216,222,232,.92);
+      border-radius: 8px;
+      background: rgba(255,253,248,.97);
+      box-shadow: 0 14px 30px rgba(31,41,55,.16);
+    }
+
+    .task-menu button {
+      min-height: 34px;
+      padding: 8px 12px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      font-size: 12px;
+      font-weight: 850;
+      border-bottom: 1px solid #eef1f5;
+    }
+
+    .task-menu button:last-child {
+      border-bottom: 0;
+    }
+
+    .task-menu button.danger {
+      color: #b42318;
     }
 
     .task-edit-grid {
@@ -3060,7 +3098,8 @@
       padding: 16px;
       color: var(--muted);
       text-align: center;
-      background: #fbfcff;
+      background: rgba(255,255,255,.42);
+      backdrop-filter: blur(4px);
     }
 
     .toast {
@@ -3503,10 +3542,7 @@
       records: [],
       plans: [],
       timeLogs: [],
-      tasks: [
-        { id: makeId(), name: "整理今天最重要的 3 件事", reward: 10, done: false },
-        { id: makeId(), name: "专注学习 25 分钟", reward: 25, done: false }
-      ],
+      tasks: [],
       history: [{ text: "图宾根旅行基金", amount: 300, time: "今天", date: todayKey }]
     };
 
@@ -3761,6 +3797,12 @@
       parsed.funds ??= {};
       parsed.wishlist ??= [];
       parsed.records ??= [];
+      parsed.tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+      if (parsed.tasks.length === 2
+        && parsed.tasks.some(task => task.name === "整理今天最重要的 3 件事" && task.reward === 10)
+        && parsed.tasks.some(task => task.name === "专注学习 25 分钟" && task.reward === 25)) {
+        parsed.tasks = [];
+      }
       parsed.plans ??= [];
       parsed.timeLogs = Array.isArray(parsed.timeLogs) ? parsed.timeLogs : [];
       parsed.plans = parsed.plans.map(plan => ({ ...plan, taskId: plan.taskId || null }));
@@ -3817,8 +3859,8 @@
       document.querySelector("#coins").textContent = state.coins;
       document.querySelector("#todayDone").textContent = state.todayDone;
       document.querySelector("#focusMinutes").textContent = state.focusMinutes;
-      renderTasks("#homeTasks", state.tasks.slice(0, 4));
-      renderTasks("#allTasks", state.tasks);
+      renderTaskCards("#homeTasks", state.tasks.slice(0, 4));
+      renderTaskCards("#allTasks", state.tasks);
       renderPlans();
       renderWeeklyReport();
       renderRewardSections();
@@ -3895,6 +3937,88 @@
         row.querySelector('[data-action="delete"]').addEventListener("click", () => deleteTask(task.id));
         root.appendChild(row);
       });
+    }
+
+    function renderTaskCards(selector, tasks) {
+      const root = document.querySelector(selector);
+      root.innerHTML = "";
+      if (!tasks.length) {
+        root.innerHTML = `<div class="empty">快来写下今天最重要的三件事吧。</div>`;
+        return;
+      }
+      tasks.forEach(task => {
+        const row = document.createElement("div");
+        row.className = `task${task.done ? " done" : ""}${editingTaskId === task.id ? " editing" : ""}`;
+        if (editingTaskId === task.id) {
+          row.innerHTML = `
+            <div class="task-edit-grid">
+              <input data-field="name" maxlength="40" aria-label="任务名称">
+              <select data-field="reward" aria-label="任务金币">
+                <option value="5">+5</option>
+                <option value="10">+10</option>
+                <option value="25">+25</option>
+                <option value="50">+50</option>
+              </select>
+            </div>
+            <div class="task-edit-actions">
+              <button class="primary" data-action="save">保存</button>
+              <button class="secondary" data-action="cancel">取消</button>
+            </div>
+          `;
+          row.querySelector('[data-field="name"]').value = task.name;
+          row.querySelector('[data-field="reward"]').value = String(task.reward);
+          row.querySelector('[data-action="save"]').addEventListener("click", () => saveTaskEdit(task.id, row));
+          row.querySelector('[data-action="cancel"]').addEventListener("click", cancelTaskEdit);
+          row.querySelector('[data-field="name"]').addEventListener("keydown", event => {
+            if (event.key === "Enter") saveTaskEdit(task.id, row);
+            if (event.key === "Escape") cancelTaskEdit();
+          });
+          root.appendChild(row);
+          return;
+        }
+        row.innerHTML = `
+          <div class="task-name"></div>
+          <div class="task-reward">+${task.reward}</div>
+        `;
+        row.querySelector(".task-name").textContent = task.name;
+        row.addEventListener("click", event => openTaskMenu(event, task.id));
+        root.appendChild(row);
+      });
+    }
+
+    function closeTaskMenu() {
+      document.querySelector(".task-menu")?.remove();
+    }
+
+    function openTaskMenu(event, id) {
+      event.stopPropagation();
+      closeTaskMenu();
+      closeTimelineMenu();
+      const panel = event.currentTarget.closest(".panel") || document.body;
+      const rect = panel.getBoundingClientRect();
+      const task = state.tasks.find(item => item.id === id);
+      const menu = document.createElement("div");
+      menu.className = "task-menu";
+      menu.style.setProperty("--menu-x", `${Math.max(8, event.clientX - rect.left)}px`);
+      menu.style.setProperty("--menu-y", `${Math.max(8, event.clientY - rect.top + 8)}px`);
+      menu.innerHTML = `
+        <button data-menu-action="toggle">${task?.done ? "取消完成" : "完成"}</button>
+        <button data-menu-action="edit">修改</button>
+        <button class="danger" data-menu-action="delete">删除</button>
+      `;
+      menu.querySelector('[data-menu-action="toggle"]').addEventListener("click", () => {
+        closeTaskMenu();
+        toggleTask(id);
+      });
+      menu.querySelector('[data-menu-action="edit"]').addEventListener("click", () => {
+        closeTaskMenu();
+        editTask(id);
+      });
+      menu.querySelector('[data-menu-action="delete"]').addEventListener("click", () => {
+        closeTaskMenu();
+        deleteTask(id);
+      });
+      panel.appendChild(menu);
     }
 
     function minutesBetween(start, end) {
@@ -4003,6 +4127,7 @@
     function openTimelineMenu(event, type, id) {
       event.stopPropagation();
       closeTimelineMenu();
+      closeTaskMenu();
       const timeline = document.querySelector(".day-timeline");
       if (!timeline) return;
       const rect = timeline.getBoundingClientRect();
@@ -5757,6 +5882,7 @@
     document.querySelector("#timerFinish").addEventListener("click", finishTimer);
     document.querySelector("#cityShelfButton").addEventListener("click", openCityShelf);
     document.addEventListener("click", closeTimelineMenu);
+    document.addEventListener("click", closeTaskMenu);
 
     document.querySelectorAll(".tab").forEach(tab => {
       tab.addEventListener("click", () => {
