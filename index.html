@@ -1599,6 +1599,18 @@
       border: 1px solid rgba(31,41,55,.12);
     }
 
+    .modal-card-art {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      border-radius: 8px;
+      border: 1px solid rgba(31,41,55,.12);
+      background:
+        var(--modal-card-image) var(--modal-card-x, 0%) var(--modal-card-y, 0%) / var(--modal-card-size, 500% 300%) no-repeat,
+        #fff7ec;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.62);
+    }
+
     .collect-card.asset-card::before,
     .collect-card.asset-card::after {
       display: none;
@@ -2641,7 +2653,7 @@
       border-radius: 12px;
       background:
         linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.06)),
-        url("assets/visual/generated/pet-room-pig-cozy-v2.png") center / cover no-repeat,
+        url("assets/visual/generated/pet-room-pig-cozy-v2.png") 72% center / cover no-repeat,
         linear-gradient(180deg, #fff2ed, #efcaa4);
       box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.72);
     }
@@ -3986,6 +3998,52 @@
         : `${cityId}-card`;
     }
 
+    const cardSpriteAssets = {
+      germanyCities: {
+        url: "assets/visual/generated/card-germany-cities-sprite.png",
+        cols: 5,
+        rows: 3
+      },
+      tuebingenRewards: {
+        url: "assets/visual/generated/card-tuebingen-rewards-sprite.png",
+        cols: 4,
+        rows: 2
+      }
+    };
+
+    const germanyCityCardOrder = [
+      "tuebingen", "freiburg", "stuttgart", "heidelberg", "frankfurt",
+      "cologne", "aachen", "bremen", "hamburg", "lubeck",
+      "berlin", "dresden", "leipzig", "nuremberg", "munich"
+    ];
+
+    const tuebingenRewardSpriteIndex = {
+      "tuebingen-card": 0,
+      "neckar-punt": 1,
+      "tuebingen-visit-1": 1,
+      "tuebingen-visit-2": 2,
+      "tuebingen-visit-3": 3,
+      "regional-ticket": 4,
+      "coffee-wish": 5,
+      "museum-day": 6,
+      "pig-passport": 7
+    };
+
+    function spriteCardArt(sprite, index) {
+      return {
+        cardSprite: sprite.url,
+        cardSpriteCols: sprite.cols,
+        cardSpriteRows: sprite.rows,
+        cardSpriteIndex: index
+      };
+    }
+
+    function journeyCardArt(city) {
+      const germanyIndex = germanyCityCardOrder.indexOf(city.id);
+      if (germanyIndex >= 0) return spriteCardArt(cardSpriteAssets.germanyCities, germanyIndex);
+      return { cardAsset: routeCardAsset(city) };
+    }
+
     function journeyStamp(city, index = 0) {
       return `${city.id.slice(0, 3).toUpperCase()}${index || ""}`.slice(0, 6);
     }
@@ -4014,7 +4072,7 @@
         rarity: index === 0 ? "base" : index > 70 ? "epic" : index > 15 ? "rare" : "common",
         border: index % 4 === 0 ? "green" : index % 4 === 1 ? "blue" : index % 4 === 2 ? "gold" : "rose",
         art: city.id === "shanghai" ? "shanghai" : "tuebingen",
-        cardAsset: routeCardAsset(city),
+        ...journeyCardArt(city),
         cardLine: `${city.chapter}：${city.visits.join(" / ")}。`,
         routeCityId: city.id,
         routeIndex: index,
@@ -4039,7 +4097,7 @@
         routeIndex: index,
         border: visitIndex === 0 ? "green" : visitIndex === 1 ? "blue" : "rose",
         art: city.id === "shanghai" ? "shanghai" : "tuebingen",
-        cardAsset: routeCardAsset(city),
+        ...journeyCardArt(city),
         cardLine: `${city.name}游览章：${visit}。`
       }));
       return [cityItem, ...visitItems];
@@ -4056,6 +4114,15 @@
     Object.assign(shopItems.find(item => item.id === "shanghai-flight") || {}, { cityId: "shanghai" });
     Object.assign(shopItems.find(item => item.id === "bund-walk") || {}, { cityId: "shanghai" });
     Object.assign(shopItems.find(item => item.id === "wukang-coffee") || {}, { cityId: "shanghai" });
+
+    shopItems.forEach(item => {
+      const cityId = item.routeCityId || (item.category === "city" ? item.id.replace(/-card$/, "") : null);
+      const germanyIndex = cityId ? germanyCityCardOrder.indexOf(cityId) : -1;
+      if (item.category === "city" && germanyIndex >= 0) Object.assign(item, spriteCardArt(cardSpriteAssets.germanyCities, germanyIndex));
+
+      const tuebingenIndex = tuebingenRewardSpriteIndex[item.id];
+      if (Number.isInteger(tuebingenIndex)) Object.assign(item, spriteCardArt(cardSpriteAssets.tuebingenRewards, tuebingenIndex));
+    });
 
     let activeCategory = "city";
     let activeStampCategory = "city";
@@ -5436,12 +5503,28 @@
       renderShop();
     }
 
+    function spriteOffset(index, count) {
+      return count <= 1 ? 0 : (index / (count - 1)) * 100;
+    }
+
+    function modalCardArt(item) {
+      if (item.cardSprite) {
+        const cols = item.cardSpriteCols || 1;
+        const rows = item.cardSpriteRows || 1;
+        const index = item.cardSpriteIndex || 0;
+        const x = spriteOffset(index % cols, cols);
+        const y = spriteOffset(Math.floor(index / cols), rows);
+        return `<div class="modal-card-art" role="img" aria-label="${item.name}" style="--modal-card-image:url('${item.cardSprite}'); --modal-card-size:${cols * 100}% ${rows * 100}%; --modal-card-x:${x}%; --modal-card-y:${y}%;"></div>`;
+      }
+      return `<img src="${item.cardAsset || "assets/visual/card-pig-passport.svg"}" alt="${item.name}">`;
+    }
+
     function openCardPreview(item) {
       const modal = document.querySelector("#cardModal");
       modal.innerHTML = `
         <div class="collect-card asset-card" role="dialog" aria-label="${item.name}卡牌预览">
           <button class="card-close" id="closeCard">×</button>
-          <img src="${item.cardAsset}" alt="${item.name}">
+          ${modalCardArt(item)}
           <div class="modal-card-caption">
             <strong>${item.name}</strong>
             <span>${item.cardLine || item.desc}</span>
