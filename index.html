@@ -5415,8 +5415,16 @@
         const item = shopItems.find(reward => reward.id === row.dataset.taskReward);
         row.addEventListener("click", event => {
           if (!item) return;
+          if (isOwned(item)) {
+            selectReward(item.id, { stayOnMap: true });
+            openCardPreview(item);
+            return;
+          }
           if (event.target.closest("button")) buyItem(item);
-          else selectReward(item.id, { stayOnMap: true });
+          else {
+            selectReward(item.id, { stayOnMap: true });
+            showToast(isUnlocked(item) ? `点击右侧按钮兑换：${item.name}` : unlockHint(item));
+          }
         });
       });
       root.querySelector("[data-travel-ticket]")?.addEventListener("click", event => {
@@ -6208,6 +6216,7 @@
       } else {
         showToast(`小猪盖下 ${item.stamp || item.icon} 章：${item.name}`);
       }
+      openCardPreview(item);
     }
 
     function updateTimerDisplay() {
