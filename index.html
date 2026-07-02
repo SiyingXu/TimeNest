@@ -6398,7 +6398,7 @@
     });
 
     document.querySelector("#timerFinish").addEventListener("click", finishTimer);
-    document.querySelector("#cityShelfButton").addEventListener("click", openCityShelf);
+    document.querySelector("#cityShelfButton")?.addEventListener("click", openCityShelf);
     document.addEventListener("click", closeTimelineMenu);
     document.addEventListener("click", closeTaskMenu);
 
