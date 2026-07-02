@@ -3067,7 +3067,7 @@
       .form-row { grid-template-columns: 1fr; }
     }
 
-    @media (min-width: 900px) {
+    @media (min-width: 700px) {
       body {
         padding: 22px;
       }
@@ -3075,7 +3075,7 @@
       .app {
         max-width: 1180px;
         min-height: calc(100vh - 44px);
-        grid-template-columns: 92px minmax(0, 1fr);
+        grid-template-columns: 82px minmax(0, 1fr);
         grid-template-rows: auto 1fr;
         border: 1px solid rgba(216,222,232,.86);
         border-radius: 14px;
@@ -3114,7 +3114,7 @@
         height: 100%;
         align-self: stretch;
         grid-template-columns: 1fr;
-        grid-auto-rows: 78px;
+        grid-auto-rows: 72px;
         align-content: start;
         border-top: 0;
         border-right: 1px solid var(--line);
@@ -3122,18 +3122,18 @@
       }
 
       .tab {
-        min-height: 78px;
-        font-size: 12px;
+        min-height: 72px;
+        font-size: 11px;
       }
 
       .tab svg {
-        width: 23px;
-        height: 23px;
+        width: 22px;
+        height: 22px;
       }
 
       .view.active#home-view {
         display: grid;
-        grid-template-columns: minmax(310px, 360px) minmax(0, 1fr);
+        grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
         grid-template-rows: auto 1fr;
         gap: 16px;
         align-items: start;
@@ -3167,7 +3167,7 @@
 
       .view.active#tasks-view {
         display: grid;
-        grid-template-columns: 340px minmax(0, 1fr);
+        grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
         gap: 16px;
         align-items: start;
       }
@@ -3216,7 +3216,7 @@
 
       .view.active#report-view {
         display: grid;
-        grid-template-columns: 340px minmax(0, 1fr);
+        grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
         gap: 16px;
         align-items: start;
       }
