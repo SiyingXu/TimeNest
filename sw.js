@@ -1,4 +1,4 @@
-const CACHE_NAME = "timenest-pwa-v55";
+const CACHE_NAME = "timenest-pwa-v56";
 
 const APP_SHELL = [
   "./",
@@ -13,6 +13,23 @@ const APP_SHELL = [
   "./assets/visual/generated/map-germany-tuebingen-handdrawn.png",
   "./assets/visual/generated/map-shanghai-city-handdrawn.png",
   "./assets/visual/generated/map-tuebingen-city-handdrawn.png",
+  "./assets/visual/generated/map-freiburg-city-handdrawn.png",
+  "./assets/visual/generated/map-stuttgart-city-handdrawn.png",
+  "./assets/visual/generated/map-heidelberg-city-handdrawn.png",
+  "./assets/visual/generated/map-frankfurt-city-handdrawn.png",
+  "./assets/visual/generated/map-cologne-city-handdrawn.png",
+  "./assets/visual/generated/map-aachen-city-handdrawn.png",
+  "./assets/visual/generated/map-bremen-city-handdrawn.png",
+  "./assets/visual/generated/map-hamburg-city-handdrawn.png",
+  "./assets/visual/generated/map-lubeck-city-handdrawn.png",
+  "./assets/visual/generated/map-berlin-city-handdrawn.png",
+  "./assets/visual/generated/map-dresden-city-handdrawn.png",
+  "./assets/visual/generated/map-leipzig-city-handdrawn.png",
+  "./assets/visual/generated/map-nuremberg-city-handdrawn.png",
+  "./assets/visual/generated/map-rothenburg-city-handdrawn.png",
+  "./assets/visual/generated/map-ulm-city-handdrawn.png",
+  "./assets/visual/generated/map-munich-city-handdrawn.png",
+  "./assets/visual/generated/map-fussen-city-handdrawn.png",
   "./assets/visual/generated/pet-room-pig-cozy.png",
   "./assets/visual/generated/pet-room-pig-cozy-v2.png",
   "./assets/visual/generated/pet-room-pig-vertical.png",

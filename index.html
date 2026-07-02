@@ -804,6 +804,13 @@
         linear-gradient(180deg, #d9edf0 0%, #fff7e8 100%);
     }
 
+    .world-map.map-city {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.18)),
+        var(--city-map-image) center / cover no-repeat,
+        linear-gradient(180deg, #d9edf0 0%, #fff7e8 100%);
+    }
+
     .world-map.map-chapter {
       min-height: 246px;
       background:
@@ -3987,6 +3994,28 @@
       "berlin", "dresden", "leipzig", "nuremberg", "munich"
     ];
 
+    const cityMapAssets = {
+      shanghai: "assets/visual/generated/map-shanghai-city-handdrawn.png",
+      tuebingen: "assets/visual/generated/map-tuebingen-city-handdrawn.png",
+      freiburg: "assets/visual/generated/map-freiburg-city-handdrawn.png",
+      stuttgart: "assets/visual/generated/map-stuttgart-city-handdrawn.png",
+      heidelberg: "assets/visual/generated/map-heidelberg-city-handdrawn.png",
+      frankfurt: "assets/visual/generated/map-frankfurt-city-handdrawn.png",
+      cologne: "assets/visual/generated/map-cologne-city-handdrawn.png",
+      aachen: "assets/visual/generated/map-aachen-city-handdrawn.png",
+      bremen: "assets/visual/generated/map-bremen-city-handdrawn.png",
+      hamburg: "assets/visual/generated/map-hamburg-city-handdrawn.png",
+      lubeck: "assets/visual/generated/map-lubeck-city-handdrawn.png",
+      berlin: "assets/visual/generated/map-berlin-city-handdrawn.png",
+      dresden: "assets/visual/generated/map-dresden-city-handdrawn.png",
+      leipzig: "assets/visual/generated/map-leipzig-city-handdrawn.png",
+      nuremberg: "assets/visual/generated/map-nuremberg-city-handdrawn.png",
+      rothenburg: "assets/visual/generated/map-rothenburg-city-handdrawn.png",
+      ulm: "assets/visual/generated/map-ulm-city-handdrawn.png",
+      munich: "assets/visual/generated/map-munich-city-handdrawn.png",
+      fussen: "assets/visual/generated/map-fussen-city-handdrawn.png"
+    };
+
     const tuebingenRewardSpriteIndex = {
       "tuebingen-card": 0,
       "neckar-punt": 1,
@@ -4767,22 +4796,37 @@
       return item.price ? `${item.price} 金币` : "领取";
     }
 
+    function cityIdFromMapMode(mode) {
+      return mode?.endsWith("-city") ? mode.replace(/-city$/, "") : null;
+    }
+
+    function isCityMapMode(mode) {
+      const cityId = cityIdFromMapMode(mode);
+      return Boolean(cityId && cityMapAssets[cityId]);
+    }
+
+    function cityMapAsset(mode) {
+      const cityId = cityIdFromMapMode(mode);
+      return cityId ? cityMapAssets[cityId] : null;
+    }
+
     function isMapMode(mode) {
-      return ["world", "china", "germany", "shanghai-city", "tuebingen-city"].includes(mode);
+      return ["world", "china", "germany"].includes(mode) || isCityMapMode(mode);
     }
 
     function parentMapMode(mode) {
-      if (mode === "shanghai-city") return "china";
-      if (mode === "tuebingen-city") return "world";
+      const city = journeyCityById(cityIdFromMapMode(mode));
+      if (city?.id === "shanghai") return "china";
+      if (city?.country === "德国") return "world";
+      if (isCityMapMode(mode)) return "world";
       return "world";
     }
 
     function layerTextFor(mode) {
       if (mode === "china") return ["世界", "中国", "上海入口"];
       if (mode === "germany") return ["世界", "德国", "图宾根入口"];
-      if (mode === "shanghai-city") return ["世界", "中国", "上海", "城市探索"];
-      if (mode === "tuebingen-city") {
-        const city = exploringCity();
+      if (isCityMapMode(mode)) {
+        const city = journeyCityById(cityIdFromMapMode(mode)) || exploringCity();
         return ["世界", city.country || "德国", city.name, "城市探索"];
       }
       if (mode === "chapter") return ["环球章节", journeyCities[currentJourneyIndex()]?.chapter || "当前章节"];
@@ -4792,9 +4836,8 @@
     function captionFor(mode) {
       if (mode === "china") return "中国地图：点击上海进入城市地图";
       if (mode === "germany") return "德国地图：点击图宾根进入城市地图";
-      if (mode === "shanghai-city") return "上海地图：外滩 / 机票基金 / 武康路愿望";
-      if (mode === "tuebingen-city") {
-        const city = exploringCity();
+      if (isCityMapMode(mode)) {
+        const city = journeyCityById(cityIdFromMapMode(mode)) || exploringCity();
         return `${city.name}地图：${city.visits.join(" / ")}`;
       }
       return "点击国家区域放大";
@@ -4805,8 +4848,7 @@
     }
 
     function cityVisualMapMode(cityId) {
-      if (cityId === "shanghai") return "shanghai-city";
-      return "tuebingen-city";
+      return cityMapAssets[cityId] ? `${cityId}-city` : "world";
     }
 
     function openJourneyCity(city) {
@@ -5012,7 +5054,11 @@
       const map = document.querySelector("#worldMap");
       const wasZooming = map.classList.contains("map-zooming");
       const chapterClass = visualMode === "chapter" ? ` map-chapter-${chapterMapSlug(chapter)}` : "";
-      map.className = `world-map map-${visualMode}${chapterClass}${wasZooming ? " map-zooming" : ""}`;
+      const cityMapClass = isCityMapMode(visualMode) ? " map-city" : "";
+      const cityMapImage = cityMapAsset(visualMode);
+      map.className = `world-map map-${visualMode}${cityMapClass}${chapterClass}${wasZooming ? " map-zooming" : ""}`;
+      if (cityMapImage) map.style.setProperty("--city-map-image", `url("${cityMapImage}")`);
+      else map.style.removeProperty("--city-map-image");
       map.innerHTML = visualMode === "chapter" ? chapterMapArtwork(chapter) : mapArtwork(mapMode);
       const trail = document.createElement("div");
       trail.className = `map-trail${mapMode === "world" ? "" : " in-region"}`;
@@ -5080,7 +5126,8 @@
 
       const back = document.createElement("button");
       back.className = "map-back";
-      back.textContent = mapMode === "tuebingen-city" ? "< 德国路线" : mapMode.includes("-city") ? "< 区域" : "< 世界";
+      const mapCity = journeyCityById(cityIdFromMapMode(mapMode));
+      back.textContent = mapCity?.country === "德国" ? "< 德国路线" : mapMode.includes("-city") ? "< 区域" : "< 世界";
       back.addEventListener("click", () => zoomMap(parentMapMode(mapMode)));
       map.appendChild(back);
 
@@ -5498,8 +5545,9 @@
         mapMode = "shanghai-city";
         renderTravelMap();
         renderShop();
-      } else if (mode === "tuebingen-city") {
-        mapMode = "tuebingen-city";
+      } else if (isCityMapMode(mode)) {
+        mapMode = mode;
+        exploringCityId = cityIdFromMapMode(mode) || exploringCityId;
         renderTravelMap();
         renderShop();
       } else {
