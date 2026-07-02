@@ -4135,6 +4135,7 @@
     let activeRewardSection = "city";
     let selectedRewardId = "tuebingen-card";
     let mapMode = "world";
+    let exploringCityId = null;
     let timerMode = "countdown";
     let editingPlanId = null;
     let editingTimeLogId = null;
@@ -4699,6 +4700,14 @@
       return journeyCities[currentJourneyIndex() + 1] || null;
     }
 
+    function exploringCity() {
+      return journeyCityById(exploringCityId) || journeyCities[currentJourneyIndex()];
+    }
+
+    function journeyCityIndex(cityId) {
+      return journeyCities.findIndex(city => city.id === cityId);
+    }
+
     function travelTicketId(fromCityId, toCityId) {
       return `ticket-${fromCityId}-to-${toCityId}`;
     }
@@ -4723,6 +4732,11 @@
       const from = journeyCities[currentJourneyIndex()];
       const to = nextJourneyCity();
       if (!from || !to) return null;
+      return travelTicketFor(from, to);
+    }
+
+    function travelTicketFor(from, to) {
+      if (!from || !to) return null;
       return {
         id: travelTicketId(from.id, to.id),
         from,
@@ -4732,8 +4746,15 @@
       };
     }
 
+    function cityTravelTicket(cityId) {
+      const index = journeyCityIndex(cityId);
+      if (index < 0) return null;
+      return travelTicketFor(journeyCities[index], journeyCities[index + 1]);
+    }
+
     function isUnlocked(item) {
       ensureTravelState();
+      if (isOwned(item)) return true;
       if (item.routeCityId && item.category === "city") {
         return state.travel.arrivedCities.includes(item.routeCityId) || item.routeCityId === state.travel.currentCityId;
       }
@@ -4794,7 +4815,10 @@
       if (mode === "china") return ["世界", "中国", "上海入口"];
       if (mode === "germany") return ["世界", "德国", "图宾根入口"];
       if (mode === "shanghai-city") return ["世界", "中国", "上海", "城市探索"];
-      if (mode === "tuebingen-city") return ["世界", "德国", "图宾根", "城市探索"];
+      if (mode === "tuebingen-city") {
+        const city = exploringCity();
+        return ["世界", city.country || "德国", city.name, "城市探索"];
+      }
       if (mode === "chapter") return ["环球章节", journeyCities[currentJourneyIndex()]?.chapter || "当前章节"];
       return ["世界地图", "选择国家"];
     }
@@ -4803,7 +4827,10 @@
       if (mode === "china") return "中国地图：点击上海进入城市地图";
       if (mode === "germany") return "德国地图：点击图宾根进入城市地图";
       if (mode === "shanghai-city") return "上海地图：外滩 / 机票基金 / 武康路愿望";
-      if (mode === "tuebingen-city") return "图宾根地图：内卡河 / 火车票 / 周末出发";
+      if (mode === "tuebingen-city") {
+        const city = exploringCity();
+        return `${city.name}地图：${city.visits.join(" / ")}`;
+      }
       return "点击国家区域放大";
     }
 
@@ -4812,22 +4839,19 @@
     }
 
     function cityVisualMapMode(cityId) {
-      if (cityId === "tuebingen") return "tuebingen-city";
       if (cityId === "shanghai") return "shanghai-city";
-      return "world";
+      return "tuebingen-city";
     }
 
     function openJourneyCity(city) {
       if (!city) return;
       const card = journeyCityCard(city.id);
       if (!card) return;
-      const cityMode = cityVisualMapMode(city.id);
-      if (city.id === state.travel.currentCityId && cityMode !== "world") {
-        selectedRewardId = card.id;
-        zoomMap(cityMode);
-        return;
-      }
-      selectReward(card.id);
+      exploringCityId = city.id;
+      selectedRewardId = card.id;
+      mapMode = cityVisualMapMode(city.id);
+      renderTravelMap();
+      renderShop();
     }
 
     function journeyChapters() {
@@ -5087,7 +5111,7 @@
       back.addEventListener("click", () => zoomMap(parentMapMode(mapMode)));
       map.appendChild(back);
 
-      const cityTaskItems = mapMode.includes("-city") ? currentCityMapItems() : null;
+      const cityTaskItems = mapMode.includes("-city") ? currentCityMapItems(exploringCityId) : null;
       const mapItems = cityTaskItems || shopItems.filter(item => item.mapScope === mapMode && item.x && item.y);
       mapItems.forEach((item, index) => {
         const locked = !isUnlocked(item);
@@ -5118,7 +5142,7 @@
       caption.textContent = captionFor(mapMode);
       if (!mapMode.includes("-city")) map.appendChild(caption);
 
-      if (mapMode.includes("-city")) renderCurrentCityCard();
+      if (mapMode.includes("-city")) renderCurrentCityCard(exploringCityId);
       else renderSelectedCard();
     }
 
@@ -5280,8 +5304,8 @@
       document.querySelector("#enterCurrentCityButton").addEventListener("click", () => openJourneyCity(current));
     }
 
-    function currentCityItems() {
-      const city = journeyCities[currentJourneyIndex()];
+    function currentCityItems(cityId = null) {
+      const city = journeyCityById(cityId) || exploringCity();
       const cityCard = journeyCityCard(city.id);
       const visits = shopItems
         .filter(item => item.cityId === city.id && item.category !== "city")
@@ -5290,9 +5314,9 @@
       return { city, cityCard, visits };
     }
 
-    function currentCityMapItems() {
-      const { cityCard, visits } = currentCityItems();
-      const ticket = currentTravelTicket();
+    function currentCityMapItems(cityId = null) {
+      const { city, cityCard, visits } = currentCityItems(cityId);
+      const ticket = cityTravelTicket(city.id);
       return [cityCard, ...visits, ticket].filter(Boolean);
     }
 
@@ -5313,7 +5337,7 @@
     }
 
     function cityTaskPosition(item, index) {
-      const city = journeyCities[currentJourneyIndex()];
+      const city = exploringCity();
       const cityCard = journeyCityCard(city.id);
       const custom = {
         tuebingen: {
@@ -5347,20 +5371,22 @@
       return fallback[index % fallback.length];
     }
 
-    function renderCurrentCityCard() {
+    function renderCurrentCityCard(cityId = null) {
       const root = document.querySelector("#selectedCard");
-      const { city, cityCard, visits } = currentCityItems();
-      const next = journeyCities[currentJourneyIndex() + 1];
+      const { city, cityCard, visits } = currentCityItems(cityId);
+      const cityIndex = journeyCityIndex(city.id);
+      const next = journeyCities[cityIndex + 1];
       const progress = cityProgress(city.id);
-      const ticket = currentTravelTicket();
-      const ticketReady = ticket && progress >= 3;
-      const chapter = currentChapter();
+      const ticket = cityTravelTicket(city.id);
+      const isMainCurrentCity = city.id === state.travel.currentCityId;
+      const ticketReady = ticket && progress >= 3 && isMainCurrentCity;
+      const chapter = journeyChapters().find(item => item.cities.some(chapterCity => chapterCity.id === city.id));
       root.className = "current-city-card";
       root.innerHTML = `
         <div class="journey-head">
           <div>
             <h3>${city.name} · 当前城市</h3>
-            <p>${city.country} · ${city.chapter} · ${next ? `本城盖满 3 章后购买交通票前往 ${next.name}` : "环球路线最后一站"}</p>
+            <p>${city.country} · ${city.chapter} · ${next ? (isMainCurrentCity ? `本城盖满 3 章后购买交通票前往 ${next.name}` : `浏览 ${city.name} 的城市卡和游览章`) : "环球路线最后一站"}</p>
           </div>
           <div class="map-chip">${progress}/3</div>
         </div>
@@ -5405,7 +5431,7 @@
               <div class="city-task-icon">${ticket.type.includes("机票") ? "AIR" : "RAIL"}</div>
               <div class="city-task-copy">
                 <strong>${city.name} → ${ticket.to.name}</strong>
-                <span>${ticketReady ? `${ticket.type} · ${ticket.price} 金币。购买后小猪护照会盖下出发章。` : `还差 ${3 - progress} 个游览章开放交通票。`}</span>
+                <span>${ticketReady ? `${ticket.type} · ${ticket.price} 金币。购买后小猪护照会盖下出发章。` : isMainCurrentCity ? `还差 ${3 - progress} 个游览章开放交通票。` : `交通票只在当前主线城市开放购买。`}</span>
               </div>
               <button class="${ticketReady ? "primary" : "secondary"}" data-action="travel" ${ticketReady ? "" : "disabled"}>${ticketReady ? `${ticket.price} 金币出发` : "未开放"}</button>
             </div>
@@ -5429,13 +5455,18 @@
         });
       });
       root.querySelector("[data-travel-ticket]")?.addEventListener("click", event => {
-        const ticket = currentTravelTicket();
+        const ticket = cityTravelTicket(city.id);
         if (!ticket) return;
         if (event.target.closest("button")) {
+          if (city.id !== state.travel.currentCityId) {
+            showToast(`当前主线在「${journeyCities[currentJourneyIndex()].name}」，这里只能预览 ${city.name} 的项目。`);
+            return;
+          }
           buyTravelTicket();
           return;
         }
-        selectReward(ticket.id, { stayOnMap: true });
+        selectedRewardId = ticket.id;
+        showToast(city.id === state.travel.currentCityId ? `完成 3 个游览章后可购买：${ticket.type}` : `${city.name} 的交通票仅作路线预览。`);
       });
     }
 
