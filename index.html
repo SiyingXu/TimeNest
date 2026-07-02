@@ -2592,45 +2592,157 @@
       position: relative;
       overflow: hidden;
       border: 1px solid #e4b9c4;
-      border-radius: 8px;
+      border-radius: 12px;
       background:
-        radial-gradient(circle at 18% 18%, rgba(255,255,255,.9) 0 10%, transparent 11%),
-        linear-gradient(180deg, rgba(255,244,246,.86) 0 56%, transparent 57%),
-        linear-gradient(180deg, #fff9f4 0 58%, #e9caaa 59% 100%);
-      box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.7);
+        radial-gradient(circle at 20% 22%, rgba(255,255,255,.72) 0 13%, transparent 14%),
+        linear-gradient(180deg, rgba(255,190,178,.62) 0 44%, rgba(255,224,219,.58) 45% 58%, transparent 59%),
+        linear-gradient(180deg, #fff2ed 0 58%, #efcaa4 59% 100%);
+      box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.72);
     }
 
     .pet-room::before {
       content: "";
       position: absolute;
-      left: 28px;
-      right: 28px;
-      bottom: 34px;
-      height: 70px;
-      border: 3px solid rgba(158, 101, 62, .36);
-      border-top: 12px solid rgba(158, 101, 62, .32);
-      border-radius: 18px 18px 12px 12px;
+      left: 36px;
+      right: 32px;
+      bottom: 26px;
+      height: 76px;
+      border: 4px solid rgba(169, 110, 62, .32);
+      border-top: 14px solid rgba(169, 110, 62, .28);
+      border-radius: 18px;
       background:
-        repeating-linear-gradient(90deg, transparent 0 28px, rgba(158,101,62,.28) 29px 34px),
-        linear-gradient(180deg, rgba(255,255,255,.2), rgba(214,160,103,.18));
+        repeating-linear-gradient(90deg, rgba(255,255,255,.24) 0 26px, rgba(169,110,62,.18) 27px 33px),
+        linear-gradient(180deg, rgba(255,255,255,.18), rgba(214,160,103,.18));
       box-shadow: 0 12px 22px rgba(122,74,0,.08);
     }
 
     .pet-room::after {
       content: "";
       position: absolute;
-      right: 32px;
+      right: 46px;
       top: 34px;
-      width: 104px;
-      height: 70px;
-      border: 3px solid rgba(117, 153, 171, .34);
+      width: 148px;
+      height: 108px;
+      border: 6px solid rgba(178, 116, 64, .28);
       border-radius: 18px;
       background:
-        linear-gradient(90deg, transparent 48%, rgba(117,153,171,.3) 49% 51%, transparent 52%),
-        linear-gradient(180deg, transparent 48%, rgba(117,153,171,.3) 49% 51%, transparent 52%),
-        radial-gradient(circle at 35% 30%, #fff 0 12%, transparent 13%),
-        linear-gradient(135deg, #dff2f5, #fff6dc);
-      box-shadow: 0 10px 20px rgba(31,41,55,.08);
+        linear-gradient(90deg, transparent 48%, rgba(178,116,64,.28) 49% 52%, transparent 53%),
+        linear-gradient(180deg, transparent 48%, rgba(178,116,64,.28) 49% 52%, transparent 53%),
+        radial-gradient(circle at 32% 66%, #ffe6a9 0 13%, transparent 14%),
+        linear-gradient(135deg, #cdeef6 0 50%, #fff6dc 51%);
+      box-shadow: 14px 12px 0 rgba(255,255,255,.35), 0 14px 28px rgba(122,74,0,.12);
+    }
+
+    .pet-room-plant,
+    .pet-room-bed,
+    .pet-room-rug,
+    .pet-room-action,
+    .pet-chip {
+      position: absolute;
+      z-index: 3;
+    }
+
+    .pet-room-plant {
+      left: 42px;
+      bottom: 110px;
+      width: 64px;
+      height: 86px;
+      border-radius: 0 0 18px 18px;
+      background:
+        radial-gradient(ellipse at 20% 22%, #87b75d 0 20%, transparent 21%),
+        radial-gradient(ellipse at 55% 12%, #9bc96f 0 21%, transparent 22%),
+        radial-gradient(ellipse at 78% 34%, #6ca34e 0 20%, transparent 21%),
+        linear-gradient(180deg, transparent 46%, #c36f4e 47% 100%);
+    }
+
+    .pet-room-bed {
+      right: 66px;
+      bottom: 118px;
+      width: 128px;
+      height: 56px;
+      border-radius: 50% 50% 30px 30px;
+      background:
+        radial-gradient(ellipse at 55% 48%, rgba(255,245,205,.95) 0 28%, transparent 29%),
+        linear-gradient(135deg, #f7a3a2, #ffd2b5);
+      box-shadow: 0 14px 26px rgba(190,105,82,.18);
+    }
+
+    .pet-room-rug {
+      left: 50%;
+      bottom: 92px;
+      width: 260px;
+      height: 82px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(ellipse, rgba(255,255,255,.72) 0 55%, rgba(235,196,151,.24) 56% 100%);
+      box-shadow: inset 0 0 0 4px rgba(214,160,103,.12);
+    }
+
+    .pet-chip {
+      left: 24px;
+      min-width: 118px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(255,255,255,.78);
+      box-shadow: 0 14px 28px rgba(122,74,0,.12);
+      color: #c45f78;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .pet-chip.mood {
+      top: 178px;
+    }
+
+    .pet-chip.energy {
+      top: 226px;
+      color: #c9851d;
+    }
+
+    .pet-chip i {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffd7df, #fff3c8);
+      font-style: normal;
+    }
+
+    .pet-room-action {
+      left: 34px;
+      right: 34px;
+      bottom: 28px;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px 10px 20px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(255,255,255,.86);
+      box-shadow: 0 16px 30px rgba(122,74,0,.12);
+      color: #8a5a2f;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .pet-room-action button {
+      min-height: 36px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: #fffaf5;
+      color: #9b4a22;
+      border: 1px solid rgba(214,160,103,.42);
+      font-weight: 950;
+      box-shadow: 0 8px 18px rgba(122,74,0,.08);
     }
 
     .pet-travel-card {
@@ -2672,12 +2784,12 @@
 
     .pet-room .pig-face {
       left: 50%;
-      bottom: 64px;
-      width: 112px;
-      height: 86px;
+      bottom: 146px;
+      width: 138px;
+      height: 104px;
       transform: translateX(-50%);
-      z-index: 2;
-      box-shadow: 0 12px 0 rgba(185,77,97,.08);
+      z-index: 4;
+      box-shadow: 0 16px 0 rgba(185,77,97,.08);
     }
 
     .pet-room .pig-face::before,
@@ -2689,14 +2801,14 @@
 
     .pet-toy {
       position: absolute;
-      right: 48px;
-      bottom: 48px;
+      right: 92px;
+      bottom: 72px;
       width: 46px;
       height: 46px;
       border-radius: 50%;
       background: radial-gradient(circle at 32% 28%, #fff, #f0c55d 42%, #e36b7f 43%);
       border: 2px solid rgba(31,41,55,.12);
-      z-index: 2;
+      z-index: 4;
     }
 
     .pet-status-grid {
@@ -2822,20 +2934,51 @@
     .passport {
       min-height: 0;
       border: 1px solid #ead3b8;
-      border-radius: 8px;
+      border-radius: 12px;
       background:
         linear-gradient(90deg, rgba(185,124,64,.1) 0 1px, transparent 1px 50%),
         linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,250,241,.94));
       background-size: 18px 18px;
-      padding: 12px;
+      padding: 18px;
       display: grid;
-      gap: 8px;
+      gap: 12px;
       box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.72);
       overflow: hidden;
     }
 
-    .passport strong {
-      font-size: 13px;
+    .passport-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .passport-icon {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      border: 1px solid rgba(214,160,103,.42);
+      color: #b8753d;
+      background: #fffaf3;
+      font-size: 17px;
+      font-weight: 950;
+    }
+
+    .passport-title {
+      display: grid;
+      gap: 2px;
+    }
+
+    .passport-title strong {
+      font-size: 16px;
+      line-height: 1.15;
+    }
+
+    .passport-title span,
+    .passport > span {
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .stamp-tabs {
@@ -2845,7 +2988,7 @@
     }
 
     .stamp-tab {
-      min-height: 34px;
+      min-height: 40px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: rgba(255,255,255,.86);
@@ -2896,21 +3039,22 @@
     }
 
     .stamp-card {
-      min-height: 116px;
-      border: 1px solid color-mix(in srgb, var(--stamp-color, #1f2937) 70%, #fff 30%);
+      min-height: 96px;
+      border: 1px solid color-mix(in srgb, var(--stamp-color, #1f2937) 54%, #fff 46%);
       border-radius: 10px;
       background:
-        linear-gradient(90deg, rgba(255,255,255,.72) 0 58%, rgba(255,248,236,.94) 59%),
-        radial-gradient(circle at 12% 16%, rgba(255,255,255,.92), transparent 18%),
-        linear-gradient(180deg, #fffefb, #fff7ee);
+        linear-gradient(90deg, rgba(255,255,255,.82) 0 38%, rgba(255,250,242,.94) 39%),
+        radial-gradient(circle at 8% 16%, rgba(255,255,255,.92), transparent 16%),
+        linear-gradient(180deg, #fffefb, #fff8ef);
       color: var(--stamp-color, #1f2937);
-      padding: 9px;
+      padding: 10px 12px;
       display: grid;
-      grid-template-columns: .95fr 1.05fr;
-      gap: 9px;
+      grid-template-columns: 86px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
       box-shadow:
         0 1px 0 rgba(255,255,255,.9) inset,
-        0 10px 18px rgba(122,74,0,.08);
+        0 8px 18px rgba(122,74,0,.07);
       cursor: pointer;
       transition: 160ms ease;
       position: relative;
@@ -2920,11 +3064,13 @@
     .stamp-card::before {
       content: "";
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 9px;
-      background: linear-gradient(90deg, rgba(122,74,0,.18), rgba(122,74,0,.04));
+      left: 10px;
+      bottom: 9px;
+      width: 72px;
+      height: 14px;
+      border: 1px solid currentColor;
+      border-radius: 3px;
+      opacity: .5;
     }
 
     .stamp-card::after {
@@ -2933,7 +3079,7 @@
       right: 7px;
       bottom: 7px;
       opacity: .72;
-      font-size: 8px;
+      font-size: 7px;
       font-weight: 950;
     }
 
@@ -2943,44 +3089,71 @@
     }
 
     .stamp-visual {
-      border: 2px dashed currentColor;
-      border-radius: 50%;
+      width: 76px;
+      height: 60px;
+      border: 2px solid currentColor;
+      border-radius: 12px;
       display: grid;
       place-items: center;
       min-width: 0;
       background:
+        linear-gradient(180deg, transparent 58%, currentColor 59% 62%, transparent 63%),
+        radial-gradient(circle at 27% 32%, transparent 0 13px, currentColor 14px 15px, transparent 16px),
+        linear-gradient(90deg, transparent 12%, currentColor 13% 16%, transparent 17% 31%, currentColor 32% 35%, transparent 36% 55%, currentColor 56% 60%, transparent 61%),
         radial-gradient(circle at 26% 22%, rgba(255,255,255,.88), transparent 20%),
-        radial-gradient(circle, rgba(255,255,255,.7), rgba(255,255,255,.18));
-      font-size: 18px;
+        #fffdf8;
+      font-size: 0;
       font-weight: 950;
       letter-spacing: 0;
-      aspect-ratio: 1;
       align-self: center;
-      transform: rotate(-6deg);
+      transform: rotate(-2deg);
+      position: relative;
+    }
+
+    .stamp-visual::after {
+      content: attr(data-stamp);
+      position: absolute;
+      left: 50%;
+      bottom: -1px;
+      transform: translateX(-50%) rotate(-4deg);
+      min-width: 46px;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      background: #fffaf3;
+      padding: 2px 5px;
+      font-size: 8px;
+      line-height: 1;
+      text-align: center;
     }
 
     .stamp-info {
       display: grid;
-      align-content: space-between;
+      align-content: center;
+      gap: 5px;
       min-width: 0;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 950;
       line-height: 1.15;
-      text-transform: uppercase;
     }
 
     .stamp-info strong {
-      font-size: 12px;
+      font-size: 13px;
       line-height: 1.15;
       color: #1f2937;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .stamp-date {
-      border: 1px solid currentColor;
-      min-height: 17px;
+      width: 26px;
+      height: 26px;
       display: grid;
       place-items: center;
-      font-size: 8px;
+      border-radius: 7px;
+      background: rgba(255,255,255,.65);
+      color: #7b8492;
+      font-size: 13px;
     }
 
     .stamp-card.empty-stamp {
@@ -2994,7 +3167,7 @@
       border-style: dashed;
       color: #8b95a5;
       background:
-        linear-gradient(90deg, rgba(255,255,255,.68) 0 58%, rgba(246,248,251,.9) 59%),
+        linear-gradient(90deg, rgba(255,255,255,.76) 0 38%, rgba(246,248,251,.9) 39%),
         radial-gradient(circle at 12% 16%, rgba(255,255,255,.92), transparent 18%),
         linear-gradient(180deg, #fbfcfe, #f4f6f9);
       filter: grayscale(.5);
@@ -3381,7 +3554,7 @@
 
       .view.active#pet-view .pet-stage {
         height: 100%;
-        grid-template-columns: minmax(360px, .9fr) minmax(0, 1.1fr);
+        grid-template-columns: minmax(520px, 1.05fr) minmax(560px, 1.15fr);
         align-items: stretch;
       }
 
@@ -3392,10 +3565,11 @@
 
       .view.active#pet-view .passport {
         height: 100%;
-        grid-template-rows: auto auto auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto auto minmax(0, 1fr);
       }
 
       .view.active#pet-view .stamp-album {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         align-content: start;
       }
 
@@ -3560,13 +3734,27 @@
         <div class="pet-stage">
           <div class="pet-room" aria-label="小猪宠物房间">
             <div class="pig-label">小猪窝</div>
+            <div class="pet-room-plant" aria-hidden="true"></div>
+            <div class="pet-room-bed" aria-hidden="true"></div>
+            <div class="pet-room-rug" aria-hidden="true"></div>
+            <div class="pet-chip mood"><i>♡</i><span>心情 100</span></div>
+            <div class="pet-chip energy"><i>⚡</i><span>活力 80</span></div>
             <div class="pig-face" aria-hidden="true"></div>
             <div class="pet-toy" aria-hidden="true"></div>
+            <div class="pet-room-action">
+              <span>完成任务、赚金币，给小猪换更多城市卡片吧！</span>
+              <button type="button" data-view-jump="tasks-view">去做任务 ›</button>
+            </div>
           </div>
 
           <div class="passport">
-            <strong>小猪护照盖章卡册</strong>
-            <span id="pigStatus">小猪正在等第一张票</span>
+            <div class="passport-header">
+              <div class="passport-icon" aria-hidden="true">□</div>
+              <div class="passport-title">
+                <strong>小猪养哪套卡册</strong>
+                <span id="pigStatus">小猪正在等第一张票</span>
+              </div>
+            </div>
             <div class="pet-travel-card">
               <strong id="pigTravelTitle">小猪旅行状态</strong>
               <span id="pigTravelNote">正在整理行李。</span>
@@ -4887,10 +5075,11 @@
         ? item.category === "city" || item.category === "ticket"
         : item.category === activeStampCategory
       ).sort((a, b) => (a.routeIndex ?? 999) - (b.routeIndex ?? 999) || a.name.localeCompare(b.name, "zh-CN"));
+      const stampLimit = activeStampCategory === "city" ? 15 : 9;
       const visibleStamps = [...stamps].sort((a, b) => {
         const rank = item => isOwned(item) ? 0 : isUnlocked(item) ? 1 : 2;
         return rank(a) - rank(b) || ((a.routeIndex ?? 999) - (b.routeIndex ?? 999)) || a.name.localeCompare(b.name, "zh-CN");
-      }).slice(0, 6);
+      }).slice(0, stampLimit);
       const colors = ["#178f72", "#2563eb", "#e0523f", "#1f2937", "#7c3aed", "#d24777", "#0f766e", "#b45309"];
       const album = document.querySelector("#stampAlbum");
       album.innerHTML = "";
@@ -4901,17 +5090,17 @@
         const owned = isOwned(item);
         const unlocked = isUnlocked(item);
         const card = document.createElement("div");
-        card.className = `stamp-card${owned ? "" : " locked-stamp"}`;
+        card.className = `stamp-card${owned ? " owned-stamp" : " locked-stamp"}`;
         card.style.setProperty("--stamp-color", colors[index % colors.length]);
         card.dataset.status = owned ? "STAMPED" : unlocked ? "EMPTY" : "LOCKED";
         card.innerHTML = `
-          <div class="stamp-visual">${owned ? (item.stamp || item.icon) : "..."}</div>
+          <div class="stamp-visual" data-stamp="${owned ? (item.stamp || item.icon) : "..."}"></div>
           <div class="stamp-info">
             <strong>${item.name}</strong>
             <span>${item.region || "TimeNest"}</span>
-            <span>OFFICIAL<br>VISIT PASS</span>
-            <div class="stamp-date">${owned ? `DATE ${todayKey.slice(5).replace("-", "/")}` : unlocked ? "DATE ____" : "LOCKED"}</div>
+            <span>OFFICIAL</span>
           </div>
+          <div class="stamp-date">${owned ? "✓" : "🔒"}</div>
         `;
         card.addEventListener("click", () => {
           if (!unlocked) {
@@ -6009,6 +6198,12 @@
         document.querySelector(`#${tab.dataset.view}`).classList.add("active");
         const route = tab.dataset.view.replace("-view", "");
         if (location.hash !== `#${route}`) history.replaceState(null, "", `#${route}`);
+      });
+    });
+
+    document.querySelectorAll("[data-view-jump]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelector(`.tab[data-view="${button.dataset.viewJump}"]`)?.click();
       });
     });
 
