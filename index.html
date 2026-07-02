@@ -2659,7 +2659,24 @@
     }
 
     .pet-room::before {
-      content: none;
+      content: "";
+      position: absolute;
+      right: clamp(28px, 7vw, 86px);
+      top: clamp(28px, 5vh, 58px);
+      width: clamp(118px, 18vw, 188px);
+      aspect-ratio: 1.18 / 1;
+      z-index: 2;
+      border: 8px solid rgba(196,139,86,.86);
+      border-radius: 18px;
+      background:
+        linear-gradient(90deg, transparent calc(50% - 3px), rgba(196,139,86,.72) calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
+        linear-gradient(180deg, transparent calc(50% - 3px), rgba(196,139,86,.72) calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
+        radial-gradient(circle at 30% 34%, rgba(255,224,128,.95) 0 13%, transparent 14%),
+        linear-gradient(135deg, #bfe6f5 0 52%, #fff4bf 53% 100%);
+      box-shadow:
+        14px 16px 0 rgba(255,255,255,.3),
+        0 13px 24px rgba(122,74,0,.16);
+      pointer-events: none;
     }
 
     .pet-room::after {
@@ -2669,6 +2686,11 @@
       background:
         linear-gradient(90deg, rgba(255,255,255,.04), transparent 22%, transparent 78%, rgba(255,255,255,.08)),
         linear-gradient(180deg, transparent 70%, rgba(255,238,214,.12));
+      pointer-events: none;
+    }
+
+    .pet-room::before,
+    .pet-room::after {
       pointer-events: none;
     }
 
@@ -5507,16 +5529,37 @@
       return count <= 1 ? 0 : (index / (count - 1)) * 100;
     }
 
-    function modalCardArt(item) {
+    function resolvedCardArt(item) {
+      const tuebingenIndex = tuebingenRewardSpriteIndex[item.id];
+      if (Number.isInteger(tuebingenIndex)) return spriteCardArt(cardSpriteAssets.tuebingenRewards, tuebingenIndex);
+
+      const cityId = item.routeCityId || (item.category === "city" ? item.id.replace(/-card$/, "") : item.cityId);
+      const germanyIndex = cityId ? germanyCityCardOrder.indexOf(cityId) : -1;
+      if (item.category === "city" && germanyIndex >= 0) return spriteCardArt(cardSpriteAssets.germanyCities, germanyIndex);
+
       if (item.cardSprite) {
-        const cols = item.cardSpriteCols || 1;
-        const rows = item.cardSpriteRows || 1;
-        const index = item.cardSpriteIndex || 0;
+        return {
+          cardSprite: item.cardSprite,
+          cardSpriteCols: item.cardSpriteCols || 1,
+          cardSpriteRows: item.cardSpriteRows || 1,
+          cardSpriteIndex: item.cardSpriteIndex || 0
+        };
+      }
+
+      return { cardAsset: item.cardAsset || "assets/visual/card-pig-passport.svg" };
+    }
+
+    function modalCardArt(item) {
+      const art = resolvedCardArt(item);
+      if (art.cardSprite) {
+        const cols = art.cardSpriteCols || 1;
+        const rows = art.cardSpriteRows || 1;
+        const index = art.cardSpriteIndex || 0;
         const x = spriteOffset(index % cols, cols);
         const y = spriteOffset(Math.floor(index / cols), rows);
-        return `<div class="modal-card-art" role="img" aria-label="${item.name}" style="--modal-card-image:url('${item.cardSprite}'); --modal-card-size:${cols * 100}% ${rows * 100}%; --modal-card-x:${x}%; --modal-card-y:${y}%;"></div>`;
+        return `<div class="modal-card-art" role="img" aria-label="${item.name}" style="--modal-card-image:url('${art.cardSprite}'); --modal-card-size:${cols * 100}% ${rows * 100}%; --modal-card-x:${x}%; --modal-card-y:${y}%;"></div>`;
       }
-      return `<img src="${item.cardAsset || "assets/visual/card-pig-passport.svg"}" alt="${item.name}">`;
+      return `<img src="${art.cardAsset}" alt="${item.name}">`;
     }
 
     function openCardPreview(item) {
