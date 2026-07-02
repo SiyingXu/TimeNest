@@ -2641,7 +2641,7 @@
       border-radius: 12px;
       background:
         linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.06)),
-        url("assets/visual/generated/pet-room-pig-cozy.png") center / cover no-repeat,
+        url("assets/visual/generated/pet-room-pig-cozy-v2.png") center / cover no-repeat,
         linear-gradient(180deg, #fff2ed, #efcaa4);
       box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.72);
     }
@@ -3079,54 +3079,46 @@
     }
 
     .stamp-visual {
-      width: 76px;
-      height: 60px;
-      border: 2px solid currentColor;
-      border-radius: 50% 50% 14px 14px / 46% 46% 14px 14px;
+      width: 86px;
+      height: 66px;
+      border: 1px solid rgba(31,41,55,.1);
+      border-radius: 13px;
       display: grid;
       place-items: center;
       min-width: 0;
       background:
-        radial-gradient(circle at 50% 118%, transparent 0 25px, currentColor 26px 27px, transparent 28px),
-        linear-gradient(90deg, transparent 14%, currentColor 15% 18%, transparent 19% 32%, currentColor 33% 37%, transparent 38% 57%, currentColor 58% 62%, transparent 63%),
-        linear-gradient(180deg, transparent 55%, currentColor 56% 59%, transparent 60%),
-        radial-gradient(circle at 32% 42%, currentColor 0 2px, transparent 3px),
-        radial-gradient(circle at 58% 30%, currentColor 0 2px, transparent 3px),
-        radial-gradient(circle at 26% 22%, rgba(255,255,255,.88), transparent 20%),
+        var(--stamp-art-image) var(--stamp-art-x, 0%) var(--stamp-art-y, 0%) / var(--stamp-art-size, 500% 300%) no-repeat,
         #fffdf8;
       font-size: 0;
       font-weight: 950;
       letter-spacing: 0;
       align-self: center;
-      transform: rotate(-2deg);
+      transform: rotate(-1deg);
       position: relative;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.68),
+        0 5px 12px rgba(31,41,55,.08);
     }
 
     .stamp-visual::after {
-      content: attr(data-stamp);
+      content: "";
       position: absolute;
-      left: 50%;
-      bottom: 0;
-      transform: translateX(-50%) rotate(-4deg);
-      min-width: 46px;
-      border: 1px solid currentColor;
-      border-radius: 4px;
-      background: #fffaf3;
-      padding: 2px 5px;
-      font-size: 8px;
-      line-height: 1;
-      text-align: center;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255,255,255,.26), transparent 36%);
+      pointer-events: none;
     }
 
     .owned-stamp .stamp-visual {
-      background:
-        radial-gradient(circle at 50% 118%, transparent 0 25px, currentColor 26px 27px, transparent 28px),
-        linear-gradient(90deg, transparent 14%, currentColor 15% 18%, transparent 19% 32%, currentColor 33% 37%, transparent 38% 57%, currentColor 58% 62%, transparent 63%),
-        linear-gradient(180deg, transparent 55%, currentColor 56% 59%, transparent 60%),
-        radial-gradient(circle at 32% 42%, currentColor 0 2px, transparent 3px),
-        radial-gradient(circle at 58% 30%, currentColor 0 2px, transparent 3px),
-        linear-gradient(180deg, rgba(255,255,255,.92), rgba(235,255,249,.86));
-      box-shadow: 0 0 0 4px rgba(255,255,255,.58) inset;
+      filter: saturate(1.08) contrast(1.02);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.74),
+        0 8px 18px rgba(31,41,55,.1);
+    }
+
+    .locked-stamp .stamp-visual {
+      filter: grayscale(1) opacity(.58);
+      transform: rotate(1deg);
     }
 
     .stamp-info {
@@ -5102,6 +5094,11 @@
         return rank(a) - rank(b) || ((a.routeIndex ?? 999) - (b.routeIndex ?? 999)) || a.name.localeCompare(b.name, "zh-CN");
       }).slice(0, stampLimit);
       const colors = ["#178f72", "#2563eb", "#e0523f", "#1f2937", "#7c3aed", "#d24777", "#0f766e", "#b45309"];
+      const stampSprite = {
+        url: "assets/visual/generated/pet-stamp-germany-sprite.png",
+        cols: 5,
+        rows: 3
+      };
       const album = document.querySelector("#stampAlbum");
       album.innerHTML = "";
       album.dataset.note = stamps.length > visibleStamps.length
@@ -5113,6 +5110,10 @@
         const card = document.createElement("div");
         card.className = `stamp-card${owned ? " owned-stamp" : " locked-stamp"}`;
         card.style.setProperty("--stamp-color", colors[index % colors.length]);
+        card.style.setProperty("--stamp-art-image", `url("${stampSprite.url}")`);
+        card.style.setProperty("--stamp-art-size", `${stampSprite.cols * 100}% ${stampSprite.rows * 100}%`);
+        card.style.setProperty("--stamp-art-x", `${(index % stampSprite.cols) / Math.max(stampSprite.cols - 1, 1) * 100}%`);
+        card.style.setProperty("--stamp-art-y", `${Math.floor(index / stampSprite.cols) / Math.max(stampSprite.rows - 1, 1) * 100}%`);
         card.dataset.status = owned ? "STAMPED" : unlocked ? "EMPTY" : "LOCKED";
         card.innerHTML = `
           <div class="stamp-visual" data-stamp="${owned ? (item.stamp || item.icon) : "..."}"></div>
@@ -5121,7 +5122,7 @@
             <span>${item.region || "TimeNest"}</span>
             <span>OFFICIAL</span>
           </div>
-          <div class="stamp-date">${owned ? "✓" : "🔒"}</div>
+          <div class="stamp-date">${owned ? "&check;" : "&#128274;"}</div>
         `;
         card.addEventListener("click", () => {
           if (!unlocked) {
