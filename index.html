@@ -2653,30 +2653,13 @@
       border-radius: 12px;
       background:
         linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.06)),
-        url("assets/visual/generated/pet-room-pig-cozy-v2.png") 72% center / cover no-repeat,
+        url("assets/visual/generated/pet-room-pig-vertical.png") center / cover no-repeat,
         linear-gradient(180deg, #fff2ed, #efcaa4);
       box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.72);
     }
 
     .pet-room::before {
-      content: "";
-      position: absolute;
-      right: clamp(28px, 7vw, 86px);
-      top: clamp(28px, 5vh, 58px);
-      width: clamp(118px, 18vw, 188px);
-      aspect-ratio: 1.18 / 1;
-      z-index: 2;
-      border: 8px solid rgba(196,139,86,.86);
-      border-radius: 18px;
-      background:
-        linear-gradient(90deg, transparent calc(50% - 3px), rgba(196,139,86,.72) calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
-        linear-gradient(180deg, transparent calc(50% - 3px), rgba(196,139,86,.72) calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
-        radial-gradient(circle at 30% 34%, rgba(255,224,128,.95) 0 13%, transparent 14%),
-        linear-gradient(135deg, #bfe6f5 0 52%, #fff4bf 53% 100%);
-      box-shadow:
-        14px 16px 0 rgba(255,255,255,.3),
-        0 13px 24px rgba(122,74,0,.16);
-      pointer-events: none;
+      content: none;
     }
 
     .pet-room::after {
@@ -2692,6 +2675,40 @@
     .pet-room::before,
     .pet-room::after {
       pointer-events: none;
+    }
+
+    .pet-wall-cards {
+      position: absolute;
+      z-index: 3;
+      top: 9%;
+      left: 8.5%;
+      width: 47%;
+      min-height: 19%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      align-content: start;
+      pointer-events: none;
+    }
+
+    .pet-wall-card {
+      aspect-ratio: 1.36 / 1;
+      border-radius: 8px;
+      background:
+        var(--pet-card-image) var(--pet-card-x, 50%) var(--pet-card-y, 50%) / var(--pet-card-size, cover) no-repeat,
+        rgba(255,255,255,.82);
+      border: 2px solid rgba(255,255,255,.88);
+      box-shadow: 0 7px 14px rgba(122,74,0,.13);
+      transform: rotate(var(--pet-card-tilt, -2deg));
+      overflow: hidden;
+    }
+
+    .pet-wall-card:nth-child(2n) {
+      --pet-card-tilt: 2deg;
+    }
+
+    .pet-wall-card:nth-child(3n) {
+      --pet-card-tilt: -1deg;
     }
 
     .pet-room-plant,
@@ -3769,6 +3786,7 @@
         <div class="pet-stage">
           <div class="pet-room" aria-label="小猪宠物房间">
             <div class="pig-label">小猪窝</div>
+            <div class="pet-wall-cards" id="petWallCards" aria-label="已获得卡牌墙"></div>
             <div class="pet-room-plant" aria-hidden="true"></div>
             <div class="pet-room-bed" aria-hidden="true"></div>
             <div class="pet-room-rug" aria-hidden="true"></div>
@@ -5562,6 +5580,32 @@
       return `<img src="${art.cardAsset}" alt="${item.name}">`;
     }
 
+    function cardWallStyle(item) {
+      const art = resolvedCardArt(item);
+      if (art.cardSprite) {
+        const cols = art.cardSpriteCols || 1;
+        const rows = art.cardSpriteRows || 1;
+        const index = art.cardSpriteIndex || 0;
+        const x = spriteOffset(index % cols, cols);
+        const y = spriteOffset(Math.floor(index / cols), rows);
+        return `--pet-card-image:url('${art.cardSprite}'); --pet-card-size:${cols * 100}% ${rows * 100}%; --pet-card-x:${x}%; --pet-card-y:${y}%;`;
+      }
+      return `--pet-card-image:url('${art.cardAsset}'); --pet-card-size:cover; --pet-card-x:center; --pet-card-y:center;`;
+    }
+
+    function renderPetWallCards() {
+      const wall = document.querySelector("#petWallCards");
+      if (!wall) return;
+      const wallItems = [...state.ownedRewards]
+        .reverse()
+        .map(id => shopItems.find(item => item.id === id))
+        .filter(item => item && ["city", "sight", "ticket"].includes(item.category))
+        .slice(0, 6);
+      wall.innerHTML = wallItems.map(item => `
+        <div class="pet-wall-card" title="${item.name}" style="${cardWallStyle(item)}"></div>
+      `).join("");
+    }
+
     function openCardPreview(item) {
       const modal = document.querySelector("#cardModal");
       modal.innerHTML = `
@@ -5755,6 +5799,7 @@
     }
 
     function renderPet() {
+      renderPetWallCards();
       renderPassport();
     }
 
