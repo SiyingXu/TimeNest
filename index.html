@@ -3172,7 +3172,7 @@
 
     .passport-progress-head {
       display: grid;
-      grid-template-columns: auto minmax(120px, 1fr) auto;
+      grid-template-columns: auto minmax(160px, 1fr);
       align-items: center;
       gap: 16px;
       min-height: 68px;
@@ -3227,19 +3227,6 @@
       border-radius: inherit;
       background: linear-gradient(90deg, #f46f8d, #f6a26f);
       box-shadow: 0 0 0 1px rgba(255,255,255,.44) inset;
-    }
-
-    .stamp-progress-gift {
-      width: 34px;
-      height: 34px;
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
-      border: 1px solid rgba(227,107,127,.24);
-      background: #fff1f4;
-      color: #dc5f78;
-      font-size: 17px;
-      font-weight: 950;
     }
 
     .stamp-row {
@@ -6242,7 +6229,6 @@
           <div class="stamp-progress-track" aria-label="${categoryLabel(activeStampCategory)}收集进度">
             <div style="--progress:${progressPercent}%"></div>
           </div>
-          <div class="stamp-progress-gift" aria-hidden="true">礼</div>
         `;
       } else {
         progressHead.hidden = true;
@@ -7809,6 +7795,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: city passport album v83 -->
+  <!-- deploy: city progress bar v84 -->
 </body>
 </html>
