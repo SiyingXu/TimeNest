@@ -1,4 +1,4 @@
-const CACHE_NAME = "timenest-pwa-v70";
+const CACHE_NAME = "timenest-pwa-v71";
 
 const APP_SHELL = [
   "./",
@@ -39,6 +39,22 @@ const APP_SHELL = [
   "./assets/visual/generated/card-germany-cities-sprite.png",
   "./assets/visual/generated/card-tuebingen-rewards-sprite.png",
   "./assets/visual/generated/card-freiburg-rewards-sprite.png",
+  "./assets/visual/generated/card-stuttgart-rewards-sprite.png",
+  "./assets/visual/generated/card-heidelberg-rewards-sprite.png",
+  "./assets/visual/generated/card-frankfurt-rewards-sprite.png",
+  "./assets/visual/generated/card-cologne-rewards-sprite.png",
+  "./assets/visual/generated/card-aachen-rewards-sprite.png",
+  "./assets/visual/generated/card-bremen-rewards-sprite.png",
+  "./assets/visual/generated/card-hamburg-rewards-sprite.png",
+  "./assets/visual/generated/card-lubeck-rewards-sprite.png",
+  "./assets/visual/generated/card-berlin-rewards-sprite.png",
+  "./assets/visual/generated/card-dresden-rewards-sprite.png",
+  "./assets/visual/generated/card-leipzig-rewards-sprite.png",
+  "./assets/visual/generated/card-nuremberg-rewards-sprite.png",
+  "./assets/visual/generated/card-rothenburg-rewards-sprite.png",
+  "./assets/visual/generated/card-ulm-rewards-sprite.png",
+  "./assets/visual/generated/card-munich-rewards-sprite.png",
+  "./assets/visual/generated/card-fussen-rewards-sprite.png",
   "./assets/visual/generated/card-shanghai-handdrawn.png",
   "./assets/visual/generated/card-tuebingen-handdrawn.png"
 ];

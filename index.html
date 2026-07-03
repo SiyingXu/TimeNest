@@ -799,13 +799,17 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 6px;
+      min-height: 38px;
     }
 
     .map-trail span {
       border: 1px solid rgba(31,41,55,.1);
       border-radius: 999px;
       background: rgba(255,255,255,.72);
-      padding: 5px 8px;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 11px;
       color: #435064;
       font-size: 11px;
       font-weight: 850;
@@ -818,7 +822,7 @@
     }
 
     .map-trail.in-region {
-      left: 82px;
+      left: 116px;
     }
 
     .world-map {
@@ -1045,6 +1049,34 @@
       color: var(--muted);
       font-size: 11px;
       line-height: 1.35;
+    }
+
+    .passport-gate-card {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      z-index: 5;
+      width: min(360px, calc(100% - 36px));
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(227,107,127,.22);
+      border-radius: 8px;
+      background: rgba(255,255,255,.9);
+      padding: 18px;
+      box-shadow: 0 18px 36px rgba(31,41,55,.16);
+      text-align: center;
+    }
+
+    .passport-gate-card strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .passport-gate-card span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
     }
 
     .map-chapter .map-pin {
@@ -1315,7 +1347,10 @@
       background: rgba(255,255,255,.88);
       color: var(--blue);
       border: 1px solid rgba(77,124,199,.28);
-      padding: 7px 9px;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
       font-size: 12px;
       font-weight: 850;
     }
@@ -2177,6 +2212,14 @@
     .city-task-list {
       display: grid;
       gap: 8px;
+    }
+
+    .city-task-section {
+      margin: 8px 2px 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0;
     }
 
     .city-task {
@@ -4244,6 +4287,19 @@
       }
     };
 
+    const rewardSpriteCityIds = [
+      "tuebingen", "freiburg", "stuttgart", "heidelberg", "frankfurt",
+      "cologne", "aachen", "bremen", "hamburg", "lubeck",
+      "berlin", "dresden", "leipzig", "nuremberg", "rothenburg",
+      "ulm", "munich", "fussen"
+    ];
+
+    const cityRewardSpriteAssets = Object.fromEntries(rewardSpriteCityIds.map(cityId => [cityId, {
+      url: `assets/visual/generated/card-${cityId}-rewards-sprite.png`,
+      cols: 4,
+      rows: 2
+    }]));
+
     const germanyCityCardOrder = [
       "tuebingen", "freiburg", "stuttgart", "heidelberg", "frankfurt",
       "cologne", "aachen", "bremen", "hamburg", "lubeck",
@@ -4298,6 +4354,18 @@
         cardSpriteRows: sprite.rows,
         cardSpriteIndex: index
       };
+    }
+
+    function cityRewardSpriteArt(item) {
+      const cityId = item.cityId || item.routeCityId || (item.category === "city" ? item.id.replace(/-card$/, "") : null);
+      const sprite = cityId ? cityRewardSpriteAssets[cityId] : null;
+      if (!sprite) return null;
+      if (item.sideQuest === "coffee") return spriteCardArt(sprite, 5);
+      if (item.sideQuest === "library") return spriteCardArt(sprite, 6);
+      const visitMatch = item.id.match(/-visit-(\d+)$/);
+      if (visitMatch) return spriteCardArt(sprite, Number(visitMatch[1]));
+      if (item.category === "city") return spriteCardArt(sprite, 0);
+      return null;
     }
 
     function journeyCardArt(city) {
@@ -4377,6 +4445,49 @@
     Object.assign(shopItems.find(item => item.id === "bund-walk") || {}, { cityId: "shanghai" });
     Object.assign(shopItems.find(item => item.id === "wukang-coffee") || {}, { cityId: "shanghai" });
 
+    const tuebingenSideQuests = [
+      {
+        id: "tuebingen-coffee",
+        category: "wish",
+        name: "图宾根 · 喝一杯咖啡",
+        price: 79,
+        desc: "支线愿望：完成一段真实学习或计划后，给自己留一杯河边咖啡。",
+        icon: "CAF",
+        color: "#fff2e8",
+        region: "图宾根",
+        stamp: "TUEC",
+        rarity: "wish",
+        requires: "tuebingen-card",
+        cityId: "tuebingen",
+        sideQuest: "coffee",
+        border: "rose",
+        cardLine: "图宾根支线：在内卡河边喝一杯咖啡。"
+      },
+      {
+        id: "tuebingen-library",
+        category: "wish",
+        name: "图宾根 · 图书馆小坐",
+        price: 89,
+        desc: "支线愿望：完成一段真实学习或计划后，在图书馆小坐片刻。",
+        icon: "LIB",
+        color: "#f0f7ff",
+        region: "图宾根",
+        stamp: "TUEL",
+        rarity: "wish",
+        requires: "tuebingen-card",
+        cityId: "tuebingen",
+        sideQuest: "library",
+        border: "blue",
+        cardLine: "图宾根支线：在窗边翻几页书，慢慢收尾。"
+      }
+    ];
+
+    tuebingenSideQuests.forEach(item => {
+      const existing = shopItems.find(reward => reward.id === item.id);
+      if (existing) Object.assign(existing, item);
+      else shopItems.push(item);
+    });
+
     shopItems.forEach(item => {
       const cityId = item.routeCityId || (item.category === "city" ? item.id.replace(/-card$/, "") : null);
       const germanyIndex = cityId ? germanyCityCardOrder.indexOf(cityId) : -1;
@@ -4387,6 +4498,9 @@
 
       const freiburgIndex = freiburgRewardSpriteIndex[item.id];
       if (Number.isInteger(freiburgIndex)) Object.assign(item, spriteCardArt(cardSpriteAssets.freiburgRewards, freiburgIndex));
+
+      const cityRewardArt = cityRewardSpriteArt(item);
+      if (cityRewardArt && item.category !== "city") Object.assign(item, cityRewardArt);
     });
 
     Object.assign(shopItems.find(item => item.id === "freiburg-card") || {}, {
@@ -5060,7 +5174,7 @@
     }
 
     function ownedVisitItems(cityId) {
-      return shopItems.filter(item => item.cityId === cityId && item.category !== "city" && isOwned(item));
+      return shopItems.filter(item => item.cityId === cityId && item.category !== "city" && !item.sideQuest && isOwned(item));
     }
 
     function cityProgress(cityId) {
@@ -5224,7 +5338,7 @@
       if (mode === "germany") return ["世界", "德国", "图宾根入口"];
       if (isCityMapMode(mode)) {
         const city = journeyCityById(cityIdFromMapMode(mode)) || exploringCity();
-        return ["世界", city.country || "德国", city.name, "城市探索"];
+        return ["世界", city.country || "德国", city.name];
       }
       if (mode === "chapter") return ["环球章节", journeyCities[currentJourneyIndex()]?.chapter || "当前章节"];
       return ["世界地图", "选择国家"];
@@ -5436,6 +5550,26 @@
       if (cityCount) cityCount.textContent = ownedRewardsBy("city").length;
       if (ticketCount) ticketCount.textContent = ownedRewardsBy("ticket").length + state.travel.tickets.length;
       if (wishCount) wishCount.textContent = ownedRewardsBy("wish").length;
+      const passportItem = shopItems.find(item => item.id === "pig-passport");
+      if (passportItem && !isOwned(passportItem)) {
+        selectedRewardId = "pig-passport";
+        const rewardsView = document.querySelector("#rewards-view");
+        rewardsView?.classList.toggle("city-exploring", false);
+        rewardsView?.classList.toggle("route-exploring", true);
+        const map = document.querySelector("#worldMap");
+        map.className = "world-map";
+        map.style.removeProperty("--city-map-image");
+        map.innerHTML = `
+          <div class="map-trail"><span class="active">旅行护照</span></div>
+          <div class="passport-gate-card">
+            <strong>先为小猪购买护照</strong>
+            <span>为小猪购买护照，开启环球旅行吧。护照入册后，就会出现德国路线和第一座城市。</span>
+          </div>
+        `;
+        document.querySelector("#journeyPanel").innerHTML = "";
+        renderSelectedCard();
+        return;
+      }
       renderJourneyPanel();
 
       const currentIndex = currentJourneyIndex();
@@ -5724,17 +5858,21 @@
     function currentCityItems(cityId = null) {
       const city = journeyCityById(cityId) || exploringCity();
       const cityCard = journeyCityCard(city.id);
+      const visitOrder = item => Number(item.id.match(/-visit-(\d+)$/)?.[1] || 99);
       const visits = shopItems
-        .filter(item => item.cityId === city.id && item.category !== "city")
-        .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"))
+        .filter(item => item.cityId === city.id && item.category !== "city" && !item.sideQuest)
+        .sort((a, b) => visitOrder(a) - visitOrder(b) || a.name.localeCompare(b.name, "zh-CN"))
         .slice(0, 3);
-      return { city, cityCard, visits };
+      const sideQuests = shopItems
+        .filter(item => item.cityId === city.id && item.sideQuest)
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+      return { city, cityCard, visits, sideQuests };
     }
 
     function currentCityMapItems(cityId = null) {
-      const { city, cityCard, visits } = currentCityItems(cityId);
+      const { city, cityCard, visits, sideQuests } = currentCityItems(cityId);
       const ticket = cityTravelTicket(city.id);
-      return [cityCard, ...visits, ticket].filter(Boolean);
+      return [cityCard, ...visits, ...sideQuests, ticket].filter(Boolean);
     }
 
     function taskShortMark(item) {
@@ -5762,8 +5900,112 @@
           "tuebingen-visit-1": { x: 57, y: 72 },
           "tuebingen-visit-2": { x: 46, y: 36 },
           "tuebingen-visit-3": { x: 67, y: 28 },
+          "tuebingen-coffee": { x: 26, y: 82 },
+          "tuebingen-library": { x: 36, y: 20 },
           "neckar-punt": { x: 57, y: 72 },
           "regional-ticket": { x: 18, y: 30 }
+        },
+        freiburg: {
+          [cityCard?.id || "freiburg-card"]: { x: 48, y: 54 },
+          "freiburg-visit-1": { x: 56, y: 40 },
+          "freiburg-visit-2": { x: 47, y: 63 },
+          "freiburg-visit-3": { x: 76, y: 26 }
+        },
+        stuttgart: {
+          [cityCard?.id || "stuttgart-card"]: { x: 48, y: 58 },
+          "stuttgart-visit-1": { x: 67, y: 50 },
+          "stuttgart-visit-2": { x: 48, y: 47 },
+          "stuttgart-visit-3": { x: 73, y: 28 }
+        },
+        heidelberg: {
+          [cityCard?.id || "heidelberg-card"]: { x: 48, y: 60 },
+          "heidelberg-visit-1": { x: 66, y: 30 },
+          "heidelberg-visit-2": { x: 50, y: 68 },
+          "heidelberg-visit-3": { x: 35, y: 28 }
+        },
+        frankfurt: {
+          [cityCard?.id || "frankfurt-card"]: { x: 48, y: 56 },
+          "frankfurt-visit-1": { x: 57, y: 68 },
+          "frankfurt-visit-2": { x: 38, y: 62 },
+          "frankfurt-visit-3": { x: 47, y: 49 }
+        },
+        cologne: {
+          [cityCard?.id || "cologne-card"]: { x: 45, y: 56 },
+          "cologne-visit-1": { x: 46, y: 40 },
+          "cologne-visit-2": { x: 66, y: 64 },
+          "cologne-visit-3": { x: 72, y: 58 }
+        },
+        aachen: {
+          [cityCard?.id || "aachen-card"]: { x: 49, y: 57 },
+          "aachen-visit-1": { x: 51, y: 43 },
+          "aachen-visit-2": { x: 34, y: 63 },
+          "aachen-visit-3": { x: 62, y: 54 }
+        },
+        bremen: {
+          [cityCard?.id || "bremen-card"]: { x: 49, y: 58 },
+          "bremen-visit-1": { x: 50, y: 46 },
+          "bremen-visit-2": { x: 58, y: 51 },
+          "bremen-visit-3": { x: 37, y: 65 }
+        },
+        hamburg: {
+          [cityCard?.id || "hamburg-card"]: { x: 51, y: 57 },
+          "hamburg-visit-1": { x: 42, y: 54 },
+          "hamburg-visit-2": { x: 63, y: 43 },
+          "hamburg-visit-3": { x: 70, y: 70 }
+        },
+        lubeck: {
+          [cityCard?.id || "lubeck-card"]: { x: 49, y: 56 },
+          "lubeck-visit-1": { x: 35, y: 58 },
+          "lubeck-visit-2": { x: 54, y: 52 },
+          "lubeck-visit-3": { x: 64, y: 61 }
+        },
+        berlin: {
+          [cityCard?.id || "berlin-card"]: { x: 50, y: 56 },
+          "berlin-visit-1": { x: 54, y: 48 },
+          "berlin-visit-2": { x: 44, y: 56 },
+          "berlin-visit-3": { x: 65, y: 67 }
+        },
+        dresden: {
+          [cityCard?.id || "dresden-card"]: { x: 50, y: 57 },
+          "dresden-visit-1": { x: 49, y: 43 },
+          "dresden-visit-2": { x: 38, y: 53 },
+          "dresden-visit-3": { x: 58, y: 67 }
+        },
+        leipzig: {
+          [cityCard?.id || "leipzig-card"]: { x: 49, y: 57 },
+          "leipzig-visit-1": { x: 48, y: 43 },
+          "leipzig-visit-2": { x: 68, y: 60 },
+          "leipzig-visit-3": { x: 40, y: 52 }
+        },
+        nuremberg: {
+          [cityCard?.id || "nuremberg-card"]: { x: 49, y: 58 },
+          "nuremberg-visit-1": { x: 60, y: 31 },
+          "nuremberg-visit-2": { x: 48, y: 55 },
+          "nuremberg-visit-3": { x: 36, y: 62 }
+        },
+        rothenburg: {
+          [cityCard?.id || "rothenburg-card"]: { x: 48, y: 58 },
+          "rothenburg-visit-1": { x: 70, y: 42 },
+          "rothenburg-visit-2": { x: 49, y: 61 },
+          "rothenburg-visit-3": { x: 37, y: 54 }
+        },
+        ulm: {
+          [cityCard?.id || "ulm-card"]: { x: 49, y: 58 },
+          "ulm-visit-1": { x: 52, y: 38 },
+          "ulm-visit-2": { x: 40, y: 62 },
+          "ulm-visit-3": { x: 58, y: 73 }
+        },
+        munich: {
+          [cityCard?.id || "munich-card"]: { x: 49, y: 57 },
+          "munich-visit-1": { x: 50, y: 47 },
+          "munich-visit-2": { x: 73, y: 31 },
+          "munich-visit-3": { x: 60, y: 63 }
+        },
+        fussen: {
+          [cityCard?.id || "fussen-card"]: { x: 45, y: 61 },
+          "fussen-visit-1": { x: 72, y: 35 },
+          "fussen-visit-2": { x: 34, y: 25 },
+          "fussen-visit-3": { x: 47, y: 64 }
         },
         shanghai: {
           [cityCard?.id || "shanghai-card"]: { x: 48, y: 58 },
@@ -5790,7 +6032,7 @@
 
     function renderCurrentCityCard(cityId = null) {
       const root = document.querySelector("#selectedCard");
-      const { city, cityCard, visits } = currentCityItems(cityId);
+      const { city, cityCard, visits, sideQuests } = currentCityItems(cityId);
       const cityIndex = journeyCityIndex(city.id);
       const next = journeyCities[cityIndex + 1];
       const progress = cityProgress(city.id);
@@ -5843,6 +6085,23 @@
               </div>
             `;
           }).join("")}
+          ${sideQuests.length ? `
+            <div class="city-task-section">支线任务 / 愿望清单</div>
+            ${sideQuests.map(item => {
+              const owned = isOwned(item);
+              const unlocked = isUnlocked(item);
+              return `
+                <div class="city-task side-quest${selectedRewardId === item.id ? " selected" : ""}${owned ? " done" : ""}${unlocked ? "" : " locked"}" data-task-reward="${item.id}">
+                  <div class="city-task-icon">${owned ? "✓" : item.stamp || item.icon}</div>
+                  <div class="city-task-copy">
+                    <strong>${item.name.replace(`${city.name} · `, "")}</strong>
+                    <span>${owned ? "已加入愿望清单。" : unlocked ? item.desc : unlockHint(item)}</span>
+                  </div>
+                  <button class="${owned ? "secondary" : "primary"}" data-action="buy">${rewardPriceLabel(item)}</button>
+                </div>
+              `;
+            }).join("")}
+          ` : ""}
           ${ticket ? `
             <div class="city-task travel-ticket-task${selectedRewardId === ticket.id ? " selected" : ""}${ticketReady ? "" : " locked"}" data-travel-ticket="${ticket.id}">
               <div class="city-task-icon">${ticket.type.includes("机票") ? "AIR" : "RAIL"}</div>
@@ -5976,6 +6235,9 @@
 
       const freiburgIndex = freiburgRewardSpriteIndex[item.id];
       if (Number.isInteger(freiburgIndex)) return spriteCardArt(cardSpriteAssets.freiburgRewards, freiburgIndex);
+
+      const cityRewardArt = cityRewardSpriteArt(item);
+      if (cityRewardArt && item.category !== "city") return cityRewardArt;
 
       const cityId = item.routeCityId || (item.category === "city" ? item.id.replace(/-card$/, "") : item.cityId);
       const germanyIndex = cityId ? germanyCityCardOrder.indexOf(cityId) : -1;
@@ -6702,7 +6964,7 @@
       state.wishlist = state.wishlist.filter(id => id !== item.id);
       saveState();
       render();
-      if (item.cityId && isCityCompleted(item.cityId)) {
+      if (item.cityId && !item.sideQuest && isCityCompleted(item.cityId)) {
         const city = journeyCityById(item.cityId);
         const next = city ? journeyCities[journeyCities.findIndex(routeCity => routeCity.id === city.id) + 1] : null;
         showToast(next ? `${city.name} 3 章完成，前往 ${next.name} 的交通票开放了。` : `${city.name} 3 章完成，环球路线收官！`);
