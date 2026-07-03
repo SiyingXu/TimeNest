@@ -3181,7 +3181,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       min-height: 0;
-      overflow: auto;
+      overflow: hidden;
       padding: 2px 3px 8px 2px;
       scrollbar-width: thin;
     }
@@ -3349,6 +3349,39 @@
 
     .stamp-card.stamp-pressed {
       animation: stampPress 360ms ease;
+    }
+
+    .stamp-pager {
+      display: grid;
+      grid-template-columns: 38px 1fr 38px;
+      gap: 8px;
+      align-items: center;
+      min-height: 38px;
+    }
+
+    .stamp-page-button {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(214,160,103,.42);
+      background: rgba(255,255,255,.82);
+      color: #8a5a2f;
+      font-size: 18px;
+      font-weight: 950;
+      box-shadow: 0 8px 18px rgba(122,74,0,.07);
+    }
+
+    .stamp-page-button:disabled {
+      opacity: .42;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .stamp-page-status {
+      text-align: center;
+      color: #8a5a2f;
+      font-size: 11px;
+      font-weight: 950;
     }
 
     @keyframes stampPress {
@@ -3958,7 +3991,7 @@
 
       .view.active#pet-view .passport {
         height: 100%;
-        grid-template-rows: auto auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
       }
 
       .view.active#pet-view .stamp-album {
@@ -4121,8 +4154,6 @@
             <div class="pet-room-plant" aria-hidden="true"></div>
             <div class="pet-room-bed" aria-hidden="true"></div>
             <div class="pet-room-rug" aria-hidden="true"></div>
-            <div class="pet-chip mood"><i>♡</i><span>心情 100</span></div>
-            <div class="pet-chip energy"><i>⚡</i><span>活力 80</span></div>
             <div class="pig-face" aria-hidden="true"></div>
             <div class="pet-toy" aria-hidden="true"></div>
             <div class="pet-room-action">
@@ -4150,6 +4181,7 @@
             </div>
             <div class="stamp-tabs" id="stampTabs"></div>
             <div class="stamp-album" id="stampAlbum"></div>
+            <div class="stamp-pager" id="stampPager"></div>
           </div>
         </div>
       </section>
@@ -4645,6 +4677,7 @@
 
     let activeCategory = "city";
     let activeStampCategory = "city";
+    let activeStampPage = 0;
     let activeRewardSection = "city";
     let selectedRewardId = "tuebingen-card";
     let mapMode = "world";
@@ -5820,6 +5853,189 @@
       else renderSelectedCard();
     }
 
+    const countryEnglish = {
+      "德国": "Germany",
+      "中国": "China",
+      "奥地利": "Austria",
+      "捷克": "Czech Republic",
+      "匈牙利": "Hungary",
+      "波兰": "Poland",
+      "荷兰": "Netherlands",
+      "比利时": "Belgium",
+      "法国": "France",
+      "英国": "United Kingdom",
+      "丹麦": "Denmark",
+      "瑞典": "Sweden",
+      "挪威": "Norway",
+      "芬兰": "Finland",
+      "冰岛": "Iceland",
+      "西班牙": "Spain",
+      "意大利": "Italy",
+      "斯洛文尼亚": "Slovenia",
+      "克罗地亚": "Croatia",
+      "波黑": "Bosnia and Herzegovina",
+      "希腊": "Greece",
+      "土耳其": "Türkiye",
+      "格鲁吉亚": "Georgia",
+      "亚美尼亚": "Armenia",
+      "乌兹别克斯坦": "Uzbekistan",
+      "哈萨克斯坦": "Kazakhstan",
+      "韩国": "South Korea",
+      "日本": "Japan",
+      "中国台湾": "Taiwan",
+      "越南": "Vietnam",
+      "泰国": "Thailand",
+      "新加坡": "Singapore",
+      "马来西亚": "Malaysia",
+      "印度尼西亚": "Indonesia",
+      "斯里兰卡": "Sri Lanka",
+      "印度": "India",
+      "澳大利亚": "Australia",
+      "新西兰": "New Zealand",
+      "美国": "United States",
+      "加拿大": "Canada",
+      "墨西哥": "Mexico",
+      "秘鲁": "Peru",
+      "智利": "Chile",
+      "阿根廷": "Argentina",
+      "巴西": "Brazil",
+      "南非": "South Africa",
+      "摩洛哥": "Morocco",
+      "埃及": "Egypt",
+      "葡萄牙": "Portugal",
+      "瑞士": "Switzerland"
+    };
+
+    const cityEnglish = {
+      tuebingen: "Tübingen",
+      freiburg: "Freiburg",
+      stuttgart: "Stuttgart",
+      heidelberg: "Heidelberg",
+      frankfurt: "Frankfurt",
+      cologne: "Cologne",
+      aachen: "Aachen",
+      bremen: "Bremen",
+      hamburg: "Hamburg",
+      lubeck: "Lübeck",
+      berlin: "Berlin",
+      dresden: "Dresden",
+      leipzig: "Leipzig",
+      nuremberg: "Nuremberg",
+      rothenburg: "Rothenburg ob der Tauber",
+      ulm: "Ulm",
+      munich: "Munich",
+      fussen: "Füssen",
+      salzburg: "Salzburg",
+      vienna: "Vienna",
+      prague: "Prague",
+      budapest: "Budapest",
+      krakow: "Krakow",
+      warsaw: "Warsaw",
+      amsterdam: "Amsterdam",
+      brussels: "Brussels",
+      paris: "Paris",
+      london: "London",
+      copenhagen: "Copenhagen",
+      stockholm: "Stockholm",
+      oslo: "Oslo",
+      bergen: "Bergen",
+      tromso: "Tromsø",
+      helsinki: "Helsinki",
+      reykjavik: "Reykjavík",
+      barcelona: "Barcelona",
+      milan: "Milan",
+      venice: "Venice",
+      florence: "Florence",
+      rome: "Rome",
+      ljubljana: "Ljubljana",
+      zagreb: "Zagreb",
+      sarajevo: "Sarajevo",
+      athens: "Athens",
+      istanbul: "Istanbul",
+      cappadocia: "Cappadocia",
+      tbilisi: "Tbilisi",
+      yerevan: "Yerevan",
+      samarkand: "Samarkand",
+      bukhara: "Bukhara",
+      almaty: "Almaty",
+      kashgar: "Kashgar",
+      xian: "Xi'an",
+      chengdu: "Chengdu",
+      chongqing: "Chongqing",
+      beijing: "Beijing",
+      shanghai: "Shanghai",
+      hangzhou: "Hangzhou",
+      suzhou: "Suzhou",
+      hongkong: "Hong Kong",
+      seoul: "Seoul",
+      kyoto: "Kyoto",
+      tokyo: "Tokyo",
+      taipei: "Taipei",
+      hanoi: "Hanoi",
+      bangkok: "Bangkok",
+      chiangmai: "Chiang Mai",
+      singapore: "Singapore",
+      kualalumpur: "Kuala Lumpur",
+      penang: "Penang",
+      bali: "Bali",
+      colombo: "Colombo",
+      mumbai: "Mumbai",
+      delhi: "Delhi",
+      jaipur: "Jaipur",
+      varanasi: "Varanasi",
+      sydney: "Sydney",
+      melbourne: "Melbourne",
+      cairns: "Cairns",
+      auckland: "Auckland",
+      queenstown: "Queenstown",
+      honolulu: "Honolulu",
+      sanfrancisco: "San Francisco",
+      losangeles: "Los Angeles",
+      vancouver: "Vancouver",
+      seattle: "Seattle",
+      chicago: "Chicago",
+      newyork: "New York",
+      boston: "Boston",
+      montreal: "Montreal",
+      mexicocity: "Mexico City",
+      lima: "Lima",
+      cusco: "Cusco",
+      santiago: "Santiago",
+      buenosaires: "Buenos Aires",
+      rio: "Rio de Janeiro",
+      capetown: "Cape Town",
+      marrakech: "Marrakech",
+      cairo: "Cairo",
+      lisbon: "Lisbon",
+      madrid: "Madrid",
+      zurich: "Zurich",
+      homecoming: "Tübingen"
+    };
+
+    function passportCityId(item) {
+      if (item.cityId) return item.cityId;
+      if (item.routeCityId) return item.routeCityId;
+      if (item.category === "city") return item.id.replace(/-card$/, "");
+      return null;
+    }
+
+    function stampLocationLabel(item) {
+      const cityId = passportCityId(item);
+      const city = journeyCityById(cityId);
+      if (!city) return item.region || "TimeNest";
+      return `${countryEnglish[city.country] || city.country} · ${cityEnglish[city.id] || city.name}`;
+    }
+
+    function passportStampItems(category) {
+      const routeOrder = item => item.routeIndex ?? journeyCityIndex(passportCityId(item)) ?? 999;
+      const items = category === "city"
+        ? shopItems.filter(item => item.category === "city" && journeyCityById(passportCityId(item)))
+        : category === "sight"
+          ? shopItems.filter(item => item.cityId && item.category === "sight" && !item.sideQuest)
+          : shopItems.filter(item => item.cityId && item.category === "wish" && item.sideQuest);
+      return items.sort((a, b) => routeOrder(a) - routeOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
+    }
+
     function renderPassport() {
       const latest = [...state.ownedRewards].reverse()
         .map(id => shopItems.find(item => item.id === id))
@@ -5850,20 +6066,17 @@
         tab.textContent = tabInfo.name;
         tab.addEventListener("click", () => {
           activeStampCategory = tabInfo.id;
+          activeStampPage = 0;
           renderPassport();
         });
         tabRoot.appendChild(tab);
       });
 
-      const stamps = shopItems.filter(item => activeStampCategory === "city"
-        ? item.category === "city" || item.category === "ticket"
-        : item.category === activeStampCategory
-      ).sort((a, b) => (a.routeIndex ?? 999) - (b.routeIndex ?? 999) || a.name.localeCompare(b.name, "zh-CN"));
-      const stampLimit = activeStampCategory === "city" ? 15 : 9;
-      const visibleStamps = [...stamps].sort((a, b) => {
-        const rank = item => isOwned(item) ? 0 : isUnlocked(item) ? 1 : 2;
-        return rank(a) - rank(b) || ((a.routeIndex ?? 999) - (b.routeIndex ?? 999)) || a.name.localeCompare(b.name, "zh-CN");
-      }).slice(0, stampLimit);
+      const stamps = passportStampItems(activeStampCategory);
+      const stampLimit = 12;
+      const pageCount = Math.max(1, Math.ceil(stamps.length / stampLimit));
+      activeStampPage = Math.min(activeStampPage, pageCount - 1);
+      const visibleStamps = stamps.slice(activeStampPage * stampLimit, activeStampPage * stampLimit + stampLimit);
       const colors = ["#178f72", "#2563eb", "#e0523f", "#1f2937", "#7c3aed", "#d24777", "#0f766e", "#b45309"];
       const stampSprite = {
         url: "assets/visual/generated/pet-stamp-germany-sprite.png",
@@ -5872,26 +6085,25 @@
       };
       const album = document.querySelector("#stampAlbum");
       album.innerHTML = "";
-      album.dataset.note = stamps.length > visibleStamps.length
-        ? `\u8fd8\u6709 ${stamps.length - visibleStamps.length} \u679a\u7ae0\u6536\u5728\u62a4\u7167\u540e\u9875`
-        : "";
+      album.dataset.note = "";
       visibleStamps.forEach((item, index) => {
         const owned = isOwned(item);
         const unlocked = isUnlocked(item);
+        const globalIndex = activeStampPage * stampLimit + index;
         const card = document.createElement("div");
         card.className = `stamp-card${owned ? " owned-stamp" : " locked-stamp"}`;
-        card.style.setProperty("--stamp-color", colors[index % colors.length]);
+        card.style.setProperty("--stamp-color", colors[globalIndex % colors.length]);
         card.style.setProperty("--stamp-art-image", `url("${stampSprite.url}")`);
         card.style.setProperty("--stamp-art-size", `${stampSprite.cols * 100}% ${stampSprite.rows * 100}%`);
-        card.style.setProperty("--stamp-art-x", `${(index % stampSprite.cols) / Math.max(stampSprite.cols - 1, 1) * 100}%`);
-        card.style.setProperty("--stamp-art-y", `${Math.floor(index / stampSprite.cols) / Math.max(stampSprite.rows - 1, 1) * 100}%`);
+        card.style.setProperty("--stamp-art-x", `${(globalIndex % stampSprite.cols) / Math.max(stampSprite.cols - 1, 1) * 100}%`);
+        card.style.setProperty("--stamp-art-y", `${(Math.floor(globalIndex / stampSprite.cols) % stampSprite.rows) / Math.max(stampSprite.rows - 1, 1) * 100}%`);
         card.dataset.status = owned ? "STAMPED" : unlocked ? "EMPTY" : "LOCKED";
         card.innerHTML = `
           <div class="stamp-visual" data-stamp="${owned ? (item.stamp || item.icon) : "..."}"></div>
           <div class="stamp-info">
             <strong>${item.name}</strong>
             <span>${item.region || "TimeNest"}</span>
-            <span>OFFICIAL</span>
+            <span>${stampLocationLabel(item)}</span>
           </div>
           <div class="stamp-date">${owned ? "&check;" : "&#128274;"}</div>
         `;
@@ -5907,6 +6119,21 @@
           openCardPreview(item);
         });
         album.appendChild(card);
+      });
+
+      const pager = document.querySelector("#stampPager");
+      pager.innerHTML = `
+        <button class="stamp-page-button" type="button" data-stamp-page="prev" ${activeStampPage <= 0 ? "disabled" : ""}>‹</button>
+        <div class="stamp-page-status">第 ${activeStampPage + 1} / ${pageCount} 页 · ${stamps.filter(isOwned).length} / ${stamps.length} 枚</div>
+        <button class="stamp-page-button" type="button" data-stamp-page="next" ${activeStampPage >= pageCount - 1 ? "disabled" : ""}>›</button>
+      `;
+      pager.querySelector('[data-stamp-page="prev"]').addEventListener("click", () => {
+        activeStampPage = Math.max(0, activeStampPage - 1);
+        renderPassport();
+      });
+      pager.querySelector('[data-stamp-page="next"]').addEventListener("click", () => {
+        activeStampPage = Math.min(pageCount - 1, activeStampPage + 1);
+        renderPassport();
       });
     }
 
