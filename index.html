@@ -3357,6 +3357,87 @@
       animation: stampPress 360ms ease;
     }
 
+    .stamp-album.sight-card-album {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-content: start;
+    }
+
+    .sight-album-card {
+      min-height: 0;
+      border: 1px solid color-mix(in srgb, var(--stamp-color, #1f2937) 38%, #fff 62%);
+      border-radius: 10px;
+      background: rgba(255,255,255,.78);
+      padding: 8px;
+      display: grid;
+      gap: 7px;
+      color: var(--stamp-color, #1f2937);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.9) inset,
+        0 8px 18px rgba(122,74,0,.07);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sight-album-card.locked-stamp {
+      filter: grayscale(.75);
+      opacity: .68;
+    }
+
+    .sight-album-art {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 9px;
+      border: 1px solid rgba(31,41,55,.12);
+      background:
+        var(--sight-card-image) var(--sight-card-x, 50%) var(--sight-card-y, 50%) / var(--sight-card-size, cover) no-repeat,
+        #fffdf8;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+    }
+
+    .sight-album-copy {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .sight-album-copy strong,
+    .sight-album-copy span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sight-album-copy strong {
+      color: #1f2937;
+      font-size: 11px;
+      line-height: 1.15;
+      font-weight: 950;
+    }
+
+    .sight-album-copy span {
+      color: currentColor;
+      font-size: 9px;
+      line-height: 1.15;
+      font-weight: 900;
+    }
+
+    .sight-album-status {
+      position: absolute;
+      right: 7px;
+      top: 7px;
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255,255,255,.84);
+      color: #667085;
+      font-size: 12px;
+      font-weight: 950;
+      box-shadow: 0 6px 14px rgba(31,41,55,.08);
+    }
+
     .stamp-pager {
       display: grid;
       grid-template-columns: 38px 1fr 38px;
@@ -4572,7 +4653,7 @@
       };
       const visitItems = city.visits.map((visit, visitIndex) => ({
         id: `${city.id}-visit-${visitIndex + 1}`,
-        category: visitIndex === 2 ? "wish" : "sight",
+        category: "sight",
         name: `${city.name} · ${visit}`,
         price: 60 + visitIndex * 25 + Math.min(120, index * 2),
         desc: `完成一段真实学习或计划后，给小猪护照盖下 ${city.name} 的「${visit}」章。`,
@@ -4587,6 +4668,7 @@
         requires: cityCardId(city.id),
         cityId: city.id,
         routeIndex: index,
+        visitIndex: visitIndex + 1,
         border: visitIndex === 0 ? "green" : visitIndex === 1 ? "blue" : "rose",
         art: city.id === "shanghai" ? "shanghai" : "tuebingen",
         ...journeyCardArt(city),
@@ -6079,6 +6161,7 @@
     function passportStampItems(category, chapter = null) {
       const chapterCityIds = chapter ? new Set(chapter.cities.map(city => city.id)) : null;
       const routeOrder = item => item.routeIndex ?? journeyCityIndex(passportCityId(item)) ?? 999;
+      const visitOrder = item => item.visitIndex ?? Number(item.id.match(/-visit-(\d+)$/)?.[1] || 99);
       const items = category === "city"
         ? shopItems.filter(item => item.category === "city" && journeyCityById(passportCityId(item)))
         : category === "sight"
@@ -6093,12 +6176,16 @@
           const preferred = shopItems.find(reward => reward.id === canonicalId) || item;
           unique.set(canonicalId, current || preferred);
         });
-      return [...unique.values()].sort((a, b) => routeOrder(a) - routeOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
+      return [...unique.values()].sort((a, b) => routeOrder(a) - routeOrder(b) || visitOrder(a) - visitOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    function passportPageLimit(category) {
+      return category === "sight" ? 9 : 18;
     }
 
     function passportPages(category) {
       const chapters = journeyChapters();
-      const stampLimit = 18;
+      const stampLimit = passportPageLimit(category);
       return chapters.flatMap(chapter => {
         const stamps = passportStampItems(category, chapter);
         const parts = Math.max(1, Math.ceil(stamps.length / stampLimit));
@@ -6110,6 +6197,19 @@
           total: stamps.length
         }));
       });
+    }
+
+    function sightAlbumArtStyle(item) {
+      const art = resolvedCardArt(item);
+      if (art.cardSprite) {
+        const cols = art.cardSpriteCols || 1;
+        const rows = art.cardSpriteRows || 1;
+        const index = art.cardSpriteIndex || 0;
+        const x = spriteOffset(index % cols, cols);
+        const y = spriteOffset(Math.floor(index / cols), rows);
+        return `--sight-card-image:url('${art.cardSprite}'); --sight-card-size:${cols * 100}% ${rows * 100}%; --sight-card-x:${x}%; --sight-card-y:${y}%;`;
+      }
+      return `--sight-card-image:url('${art.cardAsset || "assets/visual/card-pig-passport.svg"}'); --sight-card-size:cover; --sight-card-x:center; --sight-card-y:center;`;
     }
 
     function passportCurrentPageIndex(pages) {
@@ -6131,7 +6231,8 @@
       const pageChapter = page?.chapter || currentChapter();
       const pageChapterText = pageChapter ? `第 ${pageChapter.index + 1} 章 · ${pageChapter.name}` : "旅行卡册";
       document.querySelector(".passport-title strong").textContent = pageChapterText;
-      document.querySelector("#pigStatus").textContent = `${categoryLabel(activeStampCategory)}邮戳 · ${page?.partCount > 1 ? `${page.partIndex + 1}/${page.partCount}` : "章节页"}`;
+      const passportPageKind = activeStampCategory === "sight" ? "景点卡牌" : `${categoryLabel(activeStampCategory)}邮戳`;
+      document.querySelector("#pigStatus").textContent = `${passportPageKind} · ${page?.partCount > 1 ? `${page.partIndex + 1}/${page.partCount}` : "章节页"}`;
       document.querySelector("#pigTravelTitle").textContent = `小猪正在 ${current.name}`;
       document.querySelector("#pigTravelNote").textContent = next
         ? `本城已盖 ${currentProgress}/3 章。盖满后购买交通票，和小猪一起前往 ${next.name}。`
@@ -6168,10 +6269,27 @@
       const album = document.querySelector("#stampAlbum");
       album.innerHTML = "";
       album.dataset.note = "";
+      album.classList.toggle("sight-card-album", activeStampCategory === "sight");
       visibleStamps.forEach((item, index) => {
         const owned = isOwned(item);
         const unlocked = isUnlocked(item);
-        const globalIndex = pageChapter.firstRouteIndex + index + page.partIndex * 18;
+        const globalIndex = pageChapter.firstRouteIndex + index + page.partIndex * passportPageLimit(activeStampCategory);
+        if (activeStampCategory === "sight") {
+          const card = document.createElement("div");
+          card.className = `sight-album-card${owned ? " owned-stamp" : " locked-stamp"}`;
+          card.style.setProperty("--stamp-color", colors[globalIndex % colors.length]);
+          card.setAttribute("aria-label", item.name);
+          card.innerHTML = `
+            <div class="sight-album-art" style="${sightAlbumArtStyle(item)}" aria-hidden="true"></div>
+            <div class="sight-album-copy">
+              <strong>${item.name.replace(`${journeyCityById(item.cityId)?.name || ""} · `, "")}</strong>
+              <span>${stampLocationLabel(item)}</span>
+            </div>
+            <div class="sight-album-status">${owned ? "&check;" : unlocked ? "○" : "&#128274;"}</div>
+          `;
+          album.appendChild(card);
+          return;
+        }
         const card = document.createElement("div");
         card.className = `stamp-card${owned ? " owned-stamp" : " locked-stamp"}`;
         card.style.setProperty("--stamp-color", colors[globalIndex % colors.length]);
@@ -7709,6 +7827,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: linked regional ticket v80 -->
+  <!-- deploy: sight card album v81 -->
 </body>
 </html>
