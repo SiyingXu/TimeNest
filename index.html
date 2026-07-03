@@ -5305,6 +5305,15 @@
       return shopItems.filter(item => item.category === category && state.ownedRewards.includes(item.id));
     }
 
+    function ownedTicketCount() {
+      const ids = new Set();
+      [...state.ownedRewards, ...(state.travel?.tickets || [])].forEach(id => {
+        const item = shopItems.find(reward => reward.id === id);
+        if (item?.category === "ticket" || id.startsWith("ticket-")) ids.add(passportCanonicalRewardIds[id] || id);
+      });
+      return ids.size;
+    }
+
     function selectedReward() {
       return shopItems.find(item => item.id === selectedRewardId) || shopItems[0];
     }
@@ -5327,20 +5336,31 @@
       "neckar-punt": ["tuebingen-visit-1"],
       "tuebingen-visit-1": ["neckar-punt"],
       "bund-walk": ["shanghai-visit-1"],
-      "shanghai-visit-1": ["bund-walk"]
+      "shanghai-visit-1": ["bund-walk"],
+      "regional-ticket": ["ticket-tuebingen-to-freiburg"],
+      "ticket-tuebingen-to-freiburg": ["regional-ticket"]
     };
 
     const passportCanonicalRewardIds = {
       "neckar-punt": "tuebingen-visit-1",
-      "bund-walk": "shanghai-visit-1"
+      "bund-walk": "shanghai-visit-1",
+      "regional-ticket": "ticket-tuebingen-to-freiburg"
     };
 
     function canonicalRewardId(item) {
       return passportCanonicalRewardIds[item.id] || item.id;
     }
 
+    function equivalentIds(id) {
+      return [id, ...(equivalentRewardIds[id] || [])];
+    }
+
+    function isRewardOwnedById(id) {
+      return equivalentIds(id).some(rewardId => state.ownedRewards.includes(rewardId) || state.travel?.tickets?.includes(rewardId));
+    }
+
     function isOwned(item) {
-      return [item.id, ...(equivalentRewardIds[item.id] || [])].some(id => state.ownedRewards.includes(id));
+      return isRewardOwnedById(item.id);
     }
 
     function journeyCityById(cityId) {
@@ -5438,6 +5458,10 @@
       const index = journeyCityIndex(cityId);
       if (index < 0) return null;
       return travelTicketFor(journeyCities[index], journeyCities[index + 1]);
+    }
+
+    function isTravelTicketOwned(ticket) {
+      return Boolean(ticket && isRewardOwnedById(ticket.id));
     }
 
     function isUnlocked(item) {
@@ -5730,7 +5754,7 @@
       const ticketCount = document.querySelector("#ticketCount");
       const wishCount = document.querySelector("#wishCount");
       if (cityCount) cityCount.textContent = ownedRewardsBy("city").length;
-      if (ticketCount) ticketCount.textContent = ownedRewardsBy("ticket").length + state.travel.tickets.length;
+      if (ticketCount) ticketCount.textContent = ownedTicketCount();
       if (wishCount) wishCount.textContent = ownedRewardsBy("wish").length;
       const passportItem = shopItems.find(item => item.id === "pig-passport");
       if (passportItem && !isOwned(passportItem)) {
@@ -6471,7 +6495,8 @@
       const progress = cityProgress(city.id);
       const ticket = cityTravelTicket(city.id);
       const isMainCurrentCity = city.id === state.travel.currentCityId;
-      const ticketReady = ticket && progress >= 3 && isMainCurrentCity;
+      const ticketOwned = isTravelTicketOwned(ticket);
+      const ticketReady = ticket && isMainCurrentCity && (progress >= 3 || ticketOwned);
       const chapter = journeyChapters().find(item => item.cities.some(chapterCity => chapterCity.id === city.id));
       root.className = "current-city-card";
       root.innerHTML = `
@@ -6536,13 +6561,13 @@
             }).join("")}
           ` : ""}
           ${ticket ? `
-            <div class="city-task travel-ticket-task${selectedRewardId === ticket.id ? " selected" : ""}${ticketReady ? "" : " locked"}" data-travel-ticket="${ticket.id}">
+            <div class="city-task travel-ticket-task${selectedRewardId === ticket.id ? " selected" : ""}${ticketReady ? "" : " locked"}${ticketOwned ? " done" : ""}" data-travel-ticket="${ticket.id}">
               <div class="city-task-icon">${ticket.type.includes("机票") ? "AIR" : "RAIL"}</div>
               <div class="city-task-copy">
                 <strong>${city.name} → ${ticket.to.name}</strong>
-                <span>${ticketReady ? `${ticket.type} · ${ticket.price} 金币。购买后小猪护照会盖下出发章。` : isMainCurrentCity ? `还差 ${3 - progress} 个游览章开放交通票。` : `交通票只在当前主线城市开放购买。`}</span>
+                <span>${ticketOwned ? "已购买车票，可以和小猪一起前往下一站。" : ticketReady ? `${ticket.type} · ${ticket.price} 金币。购买后小猪护照会盖下出发章。` : isMainCurrentCity ? `还差 ${3 - progress} 个游览章开放交通票。` : `交通票只在当前主线城市开放购买。`}</span>
               </div>
-              <button class="${ticketReady ? "primary" : "secondary"}" data-action="travel" ${ticketReady ? "" : "disabled"}>${ticketReady ? `${ticket.price} 金币出发` : "未开放"}</button>
+              <button class="${ticketReady ? "primary" : "secondary"}" data-action="travel" ${ticketReady ? "" : "disabled"}>${ticketOwned ? "出发" : ticketReady ? `${ticket.price} 金币出发` : "未开放"}</button>
             </div>
           ` : ""}
         </div>
@@ -6586,16 +6611,17 @@
         return;
       }
       const progress = cityProgress(ticket.from.id);
-      if (progress < 3) {
+      const ticketOwned = isTravelTicketOwned(ticket);
+      if (progress < 3 && !ticketOwned) {
         showToast(`先完成「${ticket.from.name}」的 3 个游览章。`);
         return;
       }
-      if (state.coins < ticket.price) {
+      if (!ticketOwned && state.coins < ticket.price) {
         showToast("金币还不够，先去完成任务或专注计时。");
         return;
       }
-      if (!window.confirm(`确认花费 ${ticket.price} 金币购买${ticket.type}，从「${ticket.from.name}」前往「${ticket.to.name}」吗？`)) return;
-      spendCoins(ticket.price, `购买「${ticket.from.name}→${ticket.to.name}」${ticket.type}`);
+      if (!ticketOwned && !window.confirm(`确认花费 ${ticket.price} 金币购买${ticket.type}，从「${ticket.from.name}」前往「${ticket.to.name}」吗？`)) return;
+      if (!ticketOwned) spendCoins(ticket.price, `购买「${ticket.from.name}→${ticket.to.name}」${ticket.type}`);
       if (!state.travel.tickets.includes(ticket.id)) state.travel.tickets.push(ticket.id);
       if (!state.ownedRewards.includes(ticket.id)) state.ownedRewards.push(ticket.id);
       state.travel.currentCityId = ticket.to.id;
