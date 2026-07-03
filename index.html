@@ -3864,7 +3864,7 @@
 
     const journeyCities = [
       { id: "tuebingen", name: "图宾根", country: "德国", chapter: "德国起点", x: 49, y: 39, visits: ["内卡河小船", "老城集市", "霍亨图宾根城堡"] },
-      { id: "freiburg", name: "弗赖堡", country: "德国", chapter: "德国起点", x: 46, y: 42, visits: ["明斯特大教堂", "小溪水道", "黑森林入口"] },
+      { id: "freiburg", name: "弗赖堡", country: "德国", chapter: "德国起点", x: 46, y: 42, visits: ["弗赖堡大教堂", "小溪水道", "黑森林入口"] },
       { id: "stuttgart", name: "斯图加特", country: "德国", chapter: "德国起点", x: 48, y: 40, visits: ["奔驰博物馆", "国王大街", "威廉玛花园"] },
       { id: "heidelberg", name: "海德堡", country: "德国", chapter: "德国起点", x: 47, y: 39, visits: ["海德堡城堡", "老桥", "哲学家小径"] },
       { id: "frankfurt", name: "法兰克福", country: "德国", chapter: "德国起点", x: 47, y: 38, visits: ["美因河岸", "施泰德博物馆", "罗马广场"] },
@@ -3985,6 +3985,11 @@
         url: "assets/visual/generated/card-tuebingen-rewards-sprite.png",
         cols: 4,
         rows: 2
+      },
+      freiburgRewards: {
+        url: "assets/visual/generated/card-freiburg-rewards-sprite.png",
+        cols: 4,
+        rows: 2
       }
     };
 
@@ -4026,6 +4031,13 @@
       "coffee-wish": 5,
       "museum-day": 6,
       "pig-passport": 7
+    };
+
+    const freiburgRewardSpriteIndex = {
+      "freiburg-card": 0,
+      "freiburg-visit-1": 1,
+      "freiburg-visit-2": 2,
+      "freiburg-visit-3": 3
     };
 
     function spriteCardArt(sprite, index) {
@@ -4121,6 +4133,25 @@
 
       const tuebingenIndex = tuebingenRewardSpriteIndex[item.id];
       if (Number.isInteger(tuebingenIndex)) Object.assign(item, spriteCardArt(cardSpriteAssets.tuebingenRewards, tuebingenIndex));
+
+      const freiburgIndex = freiburgRewardSpriteIndex[item.id];
+      if (Number.isInteger(freiburgIndex)) Object.assign(item, spriteCardArt(cardSpriteAssets.freiburgRewards, freiburgIndex));
+    });
+
+    Object.assign(shopItems.find(item => item.id === "freiburg-card") || {}, {
+      cardLine: "老城溪渠、红瓦屋顶和大教堂尖塔。"
+    });
+    Object.assign(shopItems.find(item => item.id === "freiburg-visit-1") || {}, {
+      desc: "完成一段真实学习或计划后，给小猪护照盖下弗赖堡的「弗赖堡大教堂」章。",
+      cardLine: "弗赖堡游览章：大教堂广场、尖塔和花市。"
+    });
+    Object.assign(shopItems.find(item => item.id === "freiburg-visit-2") || {}, {
+      desc: "完成一段真实学习或计划后，给小猪护照盖下弗赖堡的「小溪水道」章。",
+      cardLine: "弗赖堡游览章：老城石路边流过的 Bächle 小水渠。"
+    });
+    Object.assign(shopItems.find(item => item.id === "freiburg-visit-3") || {}, {
+      desc: "完成一段真实学习或计划后，给小猪护照盖下弗赖堡的「黑森林入口」章。",
+      cardLine: "弗赖堡游览章：从城边走向黑森林的绿色山路。"
     });
 
     let activeCategory = "city";
@@ -5576,6 +5607,9 @@
     function resolvedCardArt(item) {
       const tuebingenIndex = tuebingenRewardSpriteIndex[item.id];
       if (Number.isInteger(tuebingenIndex)) return spriteCardArt(cardSpriteAssets.tuebingenRewards, tuebingenIndex);
+
+      const freiburgIndex = freiburgRewardSpriteIndex[item.id];
+      if (Number.isInteger(freiburgIndex)) return spriteCardArt(cardSpriteAssets.freiburgRewards, freiburgIndex);
 
       const cityId = item.routeCityId || (item.category === "city" ? item.id.replace(/-card$/, "") : item.cityId);
       const germanyIndex = cityId ? germanyCityCardOrder.indexOf(cityId) : -1;
