@@ -5323,8 +5323,24 @@
       }[item.rarity] || "收藏";
     }
 
+    const equivalentRewardIds = {
+      "neckar-punt": ["tuebingen-visit-1"],
+      "tuebingen-visit-1": ["neckar-punt"],
+      "bund-walk": ["shanghai-visit-1"],
+      "shanghai-visit-1": ["bund-walk"]
+    };
+
+    const passportCanonicalRewardIds = {
+      "neckar-punt": "tuebingen-visit-1",
+      "bund-walk": "shanghai-visit-1"
+    };
+
+    function canonicalRewardId(item) {
+      return passportCanonicalRewardIds[item.id] || item.id;
+    }
+
     function isOwned(item) {
-      return state.ownedRewards.includes(item.id);
+      return [item.id, ...(equivalentRewardIds[item.id] || [])].some(id => state.ownedRewards.includes(id));
     }
 
     function journeyCityById(cityId) {
@@ -5336,7 +5352,11 @@
     }
 
     function ownedVisitItems(cityId) {
-      return shopItems.filter(item => item.cityId === cityId && item.category !== "city" && !item.sideQuest && isOwned(item));
+      const unique = new Map();
+      shopItems
+        .filter(item => item.cityId === cityId && item.category === "sight" && !item.sideQuest && isOwned(item))
+        .forEach(item => unique.set(canonicalRewardId(item), item));
+      return [...unique.values()];
     }
 
     function cityProgress(cityId) {
@@ -6040,9 +6060,16 @@
         : category === "sight"
           ? shopItems.filter(item => item.cityId && item.category === "sight" && !item.sideQuest)
           : shopItems.filter(item => item.cityId && item.category === "wish" && item.sideQuest);
-      return items
+      const unique = new Map();
+      items
         .filter(item => !chapterCityIds || chapterCityIds.has(passportCityId(item)))
-        .sort((a, b) => routeOrder(a) - routeOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
+        .forEach(item => {
+          const canonicalId = canonicalRewardId(item);
+          const current = unique.get(canonicalId);
+          const preferred = shopItems.find(reward => reward.id === canonicalId) || item;
+          unique.set(canonicalId, current || preferred);
+        });
+      return [...unique.values()].sort((a, b) => routeOrder(a) - routeOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
     }
 
     function passportPages(category) {
