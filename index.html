@@ -299,6 +299,30 @@
       gap: 9px;
     }
 
+    .home-task-create {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eef1f5;
+    }
+
+    .home-task-create h3 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    .home-task-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 82px;
+      gap: 8px;
+    }
+
+    .home-task-form select {
+      grid-column: 1 / -1;
+    }
+
     .plan-list {
       position: relative;
       min-height: 810px;
@@ -532,12 +556,17 @@
 
     .compare-row {
       display: grid;
-      grid-template-columns: 58px 1fr 46px;
+      grid-template-columns: 58px minmax(0, 1fr) minmax(72px, max-content);
       align-items: center;
       gap: 8px;
       color: var(--muted);
       font-size: 12px;
       font-weight: 800;
+    }
+
+    .compare-row strong {
+      text-align: right;
+      white-space: nowrap;
     }
 
     .meter {
@@ -3844,17 +3873,6 @@
         font-size: 10px;
       }
 
-      .view.active#tasks-view {
-        display: grid;
-        grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
-        gap: 16px;
-        align-items: start;
-      }
-
-      #tasks-view .panel {
-        margin-bottom: 0;
-      }
-
       .view.active#timer-view {
         max-width: 620px;
         margin: 0 auto;
@@ -4005,6 +4023,18 @@
         <div class="panel">
           <h2>今日任务</h2>
           <div class="task-list" id="homeTasks"></div>
+          <div class="home-task-create">
+            <h3>添加任务</h3>
+            <div class="home-task-form">
+              <input id="taskInput" maxlength="40" placeholder="例如：背单词 30 分钟">
+              <button class="primary" id="addTask">添加</button>
+              <select id="taskReward">
+                <option value="10">轻量任务 +10 金币</option>
+                <option value="20">普通任务 +20 金币</option>
+                <option value="35">困难任务 +35 金币</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="panel">
@@ -4038,25 +4068,6 @@
           <div class="plan-list" id="planList"></div>
         </div>
 
-      </section>
-
-      <section class="view" id="tasks-view">
-        <div class="panel">
-          <h2>添加任务</h2>
-          <div class="form-row">
-            <input id="taskInput" maxlength="40" placeholder="例如：背单词 30 分钟">
-            <button class="primary" id="addTask">添加</button>
-          </div>
-          <select id="taskReward">
-            <option value="10">轻量任务 +10 金币</option>
-            <option value="20">普通任务 +20 金币</option>
-            <option value="35">困难任务 +35 金币</option>
-          </select>
-        </div>
-        <div class="panel">
-          <h2>清单</h2>
-          <div class="task-list" id="allTasks"></div>
-        </div>
       </section>
 
       <section class="view" id="timer-view">
@@ -4116,7 +4127,7 @@
             <div class="pet-toy" aria-hidden="true"></div>
             <div class="pet-room-action">
               <span>完成任务、赚金币，给小猪换更多城市卡片吧！</span>
-              <button type="button" data-view-jump="tasks-view">去做任务 ›</button>
+              <button type="button" data-view-jump="home-view">去做任务 ›</button>
             </div>
           </div>
 
@@ -4195,10 +4206,6 @@
       <button class="tab active" data-view="home-view" title="首页">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
         首页
-      </button>
-      <button class="tab" data-view="tasks-view" title="任务">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        任务
       </button>
       <button class="tab" data-view="timer-view" title="计时">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>
@@ -4751,8 +4758,7 @@
       document.querySelector("#coins").textContent = state.coins;
       document.querySelector("#todayDone").textContent = state.todayDone;
       document.querySelector("#focusMinutes").textContent = state.focusMinutes;
-      renderTaskCards("#homeTasks", state.tasks.slice(0, 4));
-      renderTaskCards("#allTasks", state.tasks);
+      renderTaskCards("#homeTasks", state.tasks);
       renderPlans();
       renderWeeklyReport();
       renderRewardSections();
@@ -7368,7 +7374,8 @@
     function openRouteFromHash() {
       const route = location.hash.replace("#", "");
       if (!route) return;
-      const tab = document.querySelector(`[data-view="${route}-view"]`);
+      const normalizedRoute = route === "tasks" ? "home" : route;
+      const tab = document.querySelector(`[data-view="${normalizedRoute}-view"]`);
       if (tab) tab.click();
     }
 
