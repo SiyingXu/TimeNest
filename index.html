@@ -3206,7 +3206,7 @@
     }
 
     .stamp-card {
-      min-height: 96px;
+      min-height: 78px;
       border: 1px solid color-mix(in srgb, var(--stamp-color, #1f2937) 54%, #fff 46%);
       border-radius: 10px;
       background:
@@ -3216,8 +3216,8 @@
       color: var(--stamp-color, #1f2937);
       padding: 10px 12px;
       display: grid;
-      grid-template-columns: 86px minmax(0, 1fr) auto;
-      gap: 10px;
+      grid-template-columns: 76px minmax(0, 1fr) auto;
+      gap: 9px;
       align-items: center;
       box-shadow:
         0 1px 0 rgba(255,255,255,.9) inset,
@@ -3231,10 +3231,10 @@
     .stamp-card::before {
       content: "";
       position: absolute;
-      left: 16px;
-      bottom: 14px;
-      width: 62px;
-      height: 12px;
+      left: 14px;
+      bottom: 10px;
+      width: 54px;
+      height: 10px;
       border: 1px solid currentColor;
       border-radius: 4px;
       opacity: .5;
@@ -3258,8 +3258,8 @@
     }
 
     .stamp-visual {
-      width: 86px;
-      height: 66px;
+      width: 76px;
+      height: 56px;
       border: 1px solid rgba(31,41,55,.1);
       border-radius: 13px;
       display: grid;
@@ -3308,6 +3308,12 @@
       font-size: 11px;
       font-weight: 950;
       line-height: 1.15;
+    }
+
+    .stamp-info span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .stamp-info strong {
@@ -6023,17 +6029,41 @@
       const cityId = passportCityId(item);
       const city = journeyCityById(cityId);
       if (!city) return item.region || "TimeNest";
-      return `${countryEnglish[city.country] || city.country} · ${cityEnglish[city.id] || city.name}`;
+      return `${countryEnglish[city.country] || city.country} \u00b7 ${cityEnglish[city.id] || city.name}`;
     }
 
-    function passportStampItems(category) {
+    function passportStampItems(category, chapter = null) {
+      const chapterCityIds = chapter ? new Set(chapter.cities.map(city => city.id)) : null;
       const routeOrder = item => item.routeIndex ?? journeyCityIndex(passportCityId(item)) ?? 999;
       const items = category === "city"
         ? shopItems.filter(item => item.category === "city" && journeyCityById(passportCityId(item)))
         : category === "sight"
           ? shopItems.filter(item => item.cityId && item.category === "sight" && !item.sideQuest)
           : shopItems.filter(item => item.cityId && item.category === "wish" && item.sideQuest);
-      return items.sort((a, b) => routeOrder(a) - routeOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
+      return items
+        .filter(item => !chapterCityIds || chapterCityIds.has(passportCityId(item)))
+        .sort((a, b) => routeOrder(a) - routeOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    function passportPages(category) {
+      const chapters = journeyChapters();
+      const stampLimit = 18;
+      return chapters.flatMap(chapter => {
+        const stamps = passportStampItems(category, chapter);
+        const parts = Math.max(1, Math.ceil(stamps.length / stampLimit));
+        return Array.from({ length: parts }, (_, partIndex) => ({
+          chapter,
+          partIndex,
+          partCount: parts,
+          stamps: stamps.slice(partIndex * stampLimit, partIndex * stampLimit + stampLimit),
+          total: stamps.length
+        }));
+      });
+    }
+
+    function passportCurrentPageIndex(pages) {
+      const chapter = currentChapter();
+      return Math.max(0, pages.findIndex(page => page.chapter.index === chapter?.index));
     }
 
     function renderPassport() {
@@ -6044,9 +6074,13 @@
       const current = journeyCities[currentIndex];
       const next = journeyCities[currentIndex + 1];
       const currentProgress = cityProgress(current.id);
-      document.querySelector("#pigStatus").textContent = latest
-        ? `小猪最近收下：${latest.name}`
-        : "小猪正在等第一张票";
+      const pages = passportPages(activeStampCategory);
+      if (activeStampPage < 0 || activeStampPage >= pages.length) activeStampPage = passportCurrentPageIndex(pages);
+      const page = pages[activeStampPage] || pages[0];
+      const pageChapter = page?.chapter || currentChapter();
+      const pageChapterText = pageChapter ? `第 ${pageChapter.index + 1} 章 · ${pageChapter.name}` : "旅行卡册";
+      document.querySelector(".passport-title strong").textContent = pageChapterText;
+      document.querySelector("#pigStatus").textContent = `${categoryLabel(activeStampCategory)}邮戳 · ${page?.partCount > 1 ? `${page.partIndex + 1}/${page.partCount}` : "章节页"}`;
       document.querySelector("#pigTravelTitle").textContent = `小猪正在 ${current.name}`;
       document.querySelector("#pigTravelNote").textContent = next
         ? `本城已盖 ${currentProgress}/3 章。盖满后购买交通票，和小猪一起前往 ${next.name}。`
@@ -6066,17 +6100,14 @@
         tab.textContent = tabInfo.name;
         tab.addEventListener("click", () => {
           activeStampCategory = tabInfo.id;
-          activeStampPage = 0;
+          activeStampPage = -1;
           renderPassport();
         });
         tabRoot.appendChild(tab);
       });
 
-      const stamps = passportStampItems(activeStampCategory);
-      const stampLimit = 12;
-      const pageCount = Math.max(1, Math.ceil(stamps.length / stampLimit));
-      activeStampPage = Math.min(activeStampPage, pageCount - 1);
-      const visibleStamps = stamps.slice(activeStampPage * stampLimit, activeStampPage * stampLimit + stampLimit);
+      const pageCount = Math.max(1, pages.length);
+      const visibleStamps = page?.stamps || [];
       const colors = ["#178f72", "#2563eb", "#e0523f", "#1f2937", "#7c3aed", "#d24777", "#0f766e", "#b45309"];
       const stampSprite = {
         url: "assets/visual/generated/pet-stamp-germany-sprite.png",
@@ -6089,7 +6120,7 @@
       visibleStamps.forEach((item, index) => {
         const owned = isOwned(item);
         const unlocked = isUnlocked(item);
-        const globalIndex = activeStampPage * stampLimit + index;
+        const globalIndex = pageChapter.firstRouteIndex + index + page.partIndex * 18;
         const card = document.createElement("div");
         card.className = `stamp-card${owned ? " owned-stamp" : " locked-stamp"}`;
         card.style.setProperty("--stamp-color", colors[globalIndex % colors.length]);
@@ -6124,7 +6155,7 @@
       const pager = document.querySelector("#stampPager");
       pager.innerHTML = `
         <button class="stamp-page-button" type="button" data-stamp-page="prev" ${activeStampPage <= 0 ? "disabled" : ""}>‹</button>
-        <div class="stamp-page-status">第 ${activeStampPage + 1} / ${pageCount} 页 · ${stamps.filter(isOwned).length} / ${stamps.length} 枚</div>
+        <div class="stamp-page-status">${pageChapterText}${page?.partCount > 1 ? ` · ${page.partIndex + 1}/${page.partCount}` : ""} · ${visibleStamps.filter(isOwned).length} / ${page?.total || 0} 枚</div>
         <button class="stamp-page-button" type="button" data-stamp-page="next" ${activeStampPage >= pageCount - 1 ? "disabled" : ""}>›</button>
       `;
       pager.querySelector('[data-stamp-page="prev"]').addEventListener("click", () => {
@@ -7587,6 +7618,10 @@
         document.querySelectorAll(".view").forEach(view => view.classList.remove("active"));
         tab.classList.add("active");
         document.querySelector(`#${tab.dataset.view}`).classList.add("active");
+        if (tab.dataset.view === "pet-view") {
+          activeStampPage = -1;
+          renderPet();
+        }
         const route = tab.dataset.view.replace("-view", "");
         if (location.hash !== `#${route}`) history.replaceState(null, "", `#${route}`);
       });
