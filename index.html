@@ -3170,6 +3170,78 @@
       background: #fff1f4;
     }
 
+    .passport-progress-head {
+      display: grid;
+      grid-template-columns: auto minmax(120px, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      min-height: 68px;
+      padding: 14px 18px;
+      border: 1px solid rgba(214,160,103,.34);
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(255,255,255,.94), transparent 24%),
+        linear-gradient(180deg, rgba(255,253,249,.92), rgba(255,248,239,.86));
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.92) inset,
+        0 10px 22px rgba(122,74,0,.06);
+    }
+
+    .passport-progress-head[hidden] {
+      display: none;
+    }
+
+    .stamp-progress-copy {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      color: #7a4d24;
+      min-width: 134px;
+      white-space: nowrap;
+    }
+
+    .stamp-progress-copy strong {
+      color: #5f391c;
+      font-size: 26px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .stamp-progress-copy span {
+      color: #8a5a2f;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .stamp-progress-track {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(234,213,196,.72);
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(122,74,0,.08);
+    }
+
+    .stamp-progress-track div {
+      width: var(--progress, 0%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #f46f8d, #f6a26f);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.44) inset;
+    }
+
+    .stamp-progress-gift {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      border: 1px solid rgba(227,107,127,.24);
+      background: #fff1f4;
+      color: #dc5f78;
+      font-size: 17px;
+      font-weight: 950;
+    }
+
     .stamp-row {
       display: flex;
       flex-wrap: wrap;
@@ -3355,6 +3427,55 @@
 
     .stamp-card.stamp-pressed {
       animation: stampPress 360ms ease;
+    }
+
+    .stamp-album.city-stamp-album {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-content: start;
+    }
+
+    .city-stamp-album .stamp-card {
+      min-height: 112px;
+      grid-template-columns: 100px minmax(0, 1fr) 28px;
+      gap: 12px;
+      padding: 14px 14px;
+      border-radius: 13px;
+    }
+
+    .city-stamp-album .stamp-card::before {
+      left: 20px;
+      bottom: 16px;
+      width: 72px;
+      height: 12px;
+      border-radius: 5px;
+    }
+
+    .city-stamp-album .stamp-card::after {
+      right: 10px;
+      bottom: 10px;
+      font-size: 8px;
+    }
+
+    .city-stamp-album .stamp-visual {
+      width: 100px;
+      height: 72px;
+      border-radius: 16px;
+    }
+
+    .city-stamp-album .stamp-info {
+      gap: 7px;
+      font-size: 12px;
+    }
+
+    .city-stamp-album .stamp-info strong {
+      font-size: 14px;
+    }
+
+    .city-stamp-album .stamp-date {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
     }
 
     .stamp-album.sight-card-album {
@@ -4078,7 +4199,7 @@
 
       .view.active#pet-view .passport {
         height: 100%;
-        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
       }
 
       .view.active#pet-view .stamp-album {
@@ -4267,6 +4388,7 @@
               </div>
             </div>
             <div class="stamp-tabs" id="stampTabs"></div>
+            <div class="passport-progress-head" id="passportProgressHead" hidden></div>
             <div class="stamp-album" id="stampAlbum"></div>
             <div class="stamp-pager" id="stampPager"></div>
           </div>
@@ -6100,15 +6222,36 @@
 
       const pageCount = Math.max(1, pages.length);
       const visibleStamps = page?.stamps || [];
+      const visibleOwnedCount = visibleStamps.filter(isOwned).length;
       const colors = ["#178f72", "#2563eb", "#e0523f", "#1f2937", "#7c3aed", "#d24777", "#0f766e", "#b45309"];
       const stampSprite = {
         url: "assets/visual/generated/pet-stamp-germany-sprite.png",
         cols: 5,
         rows: 3
       };
+      const progressHead = document.querySelector("#passportProgressHead");
+      const pageTotal = page?.total || visibleStamps.length;
+      const progressPercent = pageTotal ? Math.min(100, Math.round(visibleOwnedCount / pageTotal * 100)) : 0;
+      if (activeStampCategory === "city") {
+        progressHead.hidden = false;
+        progressHead.innerHTML = `
+          <div class="stamp-progress-copy">
+            <strong>${visibleOwnedCount} / ${pageTotal}</strong>
+            <span>${categoryLabel(activeStampCategory)}卡</span>
+          </div>
+          <div class="stamp-progress-track" aria-label="${categoryLabel(activeStampCategory)}收集进度">
+            <div style="--progress:${progressPercent}%"></div>
+          </div>
+          <div class="stamp-progress-gift" aria-hidden="true">礼</div>
+        `;
+      } else {
+        progressHead.hidden = true;
+        progressHead.innerHTML = "";
+      }
       const album = document.querySelector("#stampAlbum");
       album.innerHTML = "";
       album.dataset.note = "";
+      album.classList.toggle("city-stamp-album", activeStampCategory === "city");
       album.classList.toggle("sight-card-album", activeStampCategory === "sight");
       visibleStamps.forEach((item, index) => {
         const owned = isOwned(item);
@@ -7666,6 +7809,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: chinese passport locations v82 -->
+  <!-- deploy: city passport album v83 -->
 </body>
 </html>
