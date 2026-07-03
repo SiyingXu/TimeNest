@@ -3339,18 +3339,76 @@
       border-bottom: 1px solid #eef1f5;
     }
 
+    .weekly-left {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
     .weekly-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-bottom: 14px;
+    }
+
+    .week-recap-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .week-recap-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .week-recap-row {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 58px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .58);
+    }
+
+    .week-recap-icon {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--summary-color);
+      background: var(--summary-bg);
+      box-shadow: inset 0 0 0 1px rgba(31, 41, 55, .04);
+    }
+
+    .week-recap-icon svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.4;
+    }
+
+    .week-recap-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .week-recap-value {
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 900;
+      text-align: right;
     }
 
     .weekly-overview {
       display: grid;
-      grid-template-columns: max-content 230px;
-      gap: 22px;
+      grid-template-columns: max-content 240px;
+      gap: 28px;
       align-items: start;
+      justify-content: center;
     }
 
     .weekly-main {
@@ -3361,9 +3419,9 @@
 
     .weekly-heatmap {
       display: grid;
-      grid-template-columns: 32px repeat(7, 13px);
-      grid-template-rows: 18px repeat(18, 13px);
-      gap: 5px 9px;
+      grid-template-columns: 34px repeat(7, 26px);
+      grid-template-rows: 20px repeat(18, 16px);
+      gap: 6px 14px;
       align-items: center;
       justify-content: start;
     }
@@ -3382,8 +3440,8 @@
     }
 
     .weekly-cell {
-      width: 13px;
-      height: 13px;
+      width: 26px;
+      height: 16px;
       border-radius: 5px;
       background: var(--cell-color, #f2f4f7);
       box-shadow: inset 0 0 0 1px rgba(31, 41, 55, .035);
@@ -3417,18 +3475,18 @@
 
     .weekly-legend-item {
       display: grid;
-      grid-template-columns: 18px 1fr auto;
+      grid-template-columns: 28px 1fr auto;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       color: var(--ink);
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 850;
     }
 
     .weekly-swatch {
-      width: 14px;
+      width: 26px;
       height: 26px;
-      border-radius: 999px;
+      border-radius: 8px;
       background: var(--swatch-color);
       box-shadow: inset 0 0 0 1px rgba(31,41,55,.05);
     }
@@ -3506,14 +3564,14 @@
       .shop-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
       .weekly-heatmap {
-        grid-template-columns: 30px repeat(7, 12px);
-        grid-template-rows: 18px repeat(18, 12px);
+        grid-template-columns: 30px repeat(7, 19px);
+        grid-template-rows: 18px repeat(18, 14px);
         gap: 5px 7px;
       }
 
       .weekly-cell {
-        width: 12px;
-        height: 12px;
+        width: 19px;
+        height: 14px;
       }
     }
 
@@ -3731,12 +3789,16 @@
         align-items: start;
       }
 
-      #report-view .weekly-grid {
+      #report-view .weekly-left {
         grid-column: 1;
+      }
+
+      #report-view .weekly-grid {
         grid-template-columns: 1fr;
       }
 
-      #report-view .panel {
+      #report-view > .panel {
+        grid-column: 2;
         margin-bottom: 0;
       }
 
@@ -3913,14 +3975,43 @@
       </section>
 
       <section class="view" id="report-view">
-        <div class="weekly-grid">
-          <div class="stat">
-            <strong id="weekMinutes">0</strong>
-            <span>本周专注分钟</span>
+        <div class="weekly-left">
+          <div class="weekly-grid">
+            <div class="stat">
+              <strong id="weekMinutes">0</strong>
+              <span>本周专注分钟</span>
+            </div>
+            <div class="stat">
+              <strong id="weekCoins">0</strong>
+              <span>本周获得金币</span>
+            </div>
           </div>
-          <div class="stat">
-            <strong id="weekCoins">0</strong>
-            <span>本周获得金币</span>
+
+          <div class="panel week-recap-card" aria-label="周报摘要">
+            <h2>周报摘要</h2>
+            <div class="week-recap-list">
+              <div class="week-recap-row" style="--summary-color:#be185d;--summary-bg:#fdf2f8">
+                <span class="week-recap-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><path d="m9 12 2 2 4-5"/></svg>
+                </span>
+                <span class="week-recap-label">本周完成任务</span>
+                <strong class="week-recap-value" id="weeklyTasks">0 个</strong>
+              </div>
+              <div class="week-recap-row" style="--summary-color:#b45309;--summary-bg:#fff7ed">
+                <span class="week-recap-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>
+                </span>
+                <span class="week-recap-label">计划实际完成</span>
+                <strong class="week-recap-value" id="weeklyPlanMinutes">0 分</strong>
+              </div>
+              <div class="week-recap-row" style="--summary-color:#15803d;--summary-bg:#f0fdf4">
+                <span class="week-recap-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3z"/></svg>
+                </span>
+                <span class="week-recap-label">最佳专注日</span>
+                <strong class="week-recap-value" id="weeklyBestDay">-</strong>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -4785,10 +4876,14 @@
       });
     }
 
-    function lastSevenDays() {
+    function currentCalendarWeekDays() {
+      const monday = new Date();
+      const dayOffset = (monday.getDay() + 6) % 7;
+      monday.setDate(monday.getDate() - dayOffset);
+      monday.setHours(0, 0, 0, 0);
       return Array.from({ length: 7 }, (_, index) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - index));
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + index);
         const key = localDateKey(date);
         return {
           key,
@@ -4827,7 +4922,7 @@
     }
 
     function renderWeeklyReport() {
-      const days = lastSevenDays();
+      const days = currentCalendarWeekDays();
       const byDay = Object.fromEntries(days.map(day => [day.key, day]));
       const categoryTotals = weeklyCategoryMinutes(days);
       const hours = Array.from({ length: 18 }, (_, index) => index + 6);
@@ -4869,6 +4964,11 @@
       const bestDay = [...days].sort((a, b) => b.minutes - a.minutes)[0];
       document.querySelector("#weekMinutes").textContent = weekMinutes;
       document.querySelector("#weekCoins").textContent = weekCoins;
+      document.querySelector("#weeklyTasks").textContent = `${weekTasks} 个`;
+      document.querySelector("#weeklyPlanMinutes").textContent = formatMinutes(weekPlanMinutes);
+      document.querySelector("#weeklyBestDay").textContent = bestDay.minutes
+        ? `${bestDay.label} ${formatMinutes(bestDay.minutes)}`
+        : "-";
 
       const cellColor = (day, hour) => {
         const entries = Object.entries(cells[day.key][hour]);
