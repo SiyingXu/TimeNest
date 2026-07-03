@@ -5573,8 +5573,8 @@
       if (passportItem && !isOwned(passportItem)) {
         selectedRewardId = "pig-passport";
         const rewardsView = document.querySelector("#rewards-view");
-        rewardsView?.classList.toggle("city-exploring", false);
-        rewardsView?.classList.toggle("route-exploring", true);
+        rewardsView?.classList.toggle("city-exploring", true);
+        rewardsView?.classList.toggle("route-exploring", false);
         const map = document.querySelector("#worldMap");
         map.className = "world-map";
         map.style.removeProperty("--city-map-image");
