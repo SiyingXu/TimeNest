@@ -2078,49 +2078,6 @@
       background: linear-gradient(90deg, #e36b7f, #f0c55d, #3da989);
     }
 
-    .journey-chapters {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
-
-    .journey-chapter {
-      flex: 0 0 132px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255,255,255,.82);
-      padding: 8px;
-      display: grid;
-      gap: 4px;
-    }
-
-    .journey-chapter.active {
-      border-color: rgba(227,107,127,.48);
-      background: #fff1f4;
-    }
-
-    .journey-chapter.done {
-      border-color: rgba(42,121,103,.38);
-      background: #f1fff9;
-    }
-
-    .journey-chapter.locked {
-      opacity: .56;
-      filter: grayscale(.42);
-    }
-
-    .journey-chapter strong {
-      font-size: 12px;
-      line-height: 1.2;
-    }
-
-    .journey-chapter span {
-      color: var(--muted);
-      font-size: 10px;
-      line-height: 1.25;
-    }
-
     .route-overview {
       display: grid;
       gap: 10px;
@@ -4137,7 +4094,7 @@
       }
 
       .view.active#rewards-view.route-exploring #journeyPanel .route-chapter-list {
-        max-height: calc(var(--travel-panel-height) - 238px);
+        max-height: calc(var(--travel-panel-height) - 168px);
       }
 
       .view.active#rewards-view #journeyPanel,
@@ -17506,14 +17463,6 @@
         <div class="journey-progress" aria-label="环球路线进度"><div style="--progress:${progress}%"></div></div>
         <div class="journey-copy">${next ? (currentProgress >= requiredProgress ? `本城 ${requiredProgress} 章已完成，可以购买${ticket.type}前往 ${next.name}。` : `完成 ${current.name} 的 ${requiredProgress} 个游览章后，会开放前往 ${next.name} 的交通票。`) : "环球主线已经回到图宾根，可以准备毕业纪念章。"}</div>
         <div class="journey-copy">当前章节：${activeChapter?.name || current.chapter} · ${activeChapter?.done || 0}/${activeChapter?.cities.length || 1} 城完成</div>
-        <div class="journey-chapters" aria-label="环球旅行章节">
-          ${chapters.map(chapter => `
-            <button class="journey-chapter${chapter.active ? " active" : ""}${chapter.completed ? " done" : ""}${chapter.unlocked ? "" : " locked"}" data-chapter-index="${chapter.index}" type="button">
-              <strong>${chapter.index + 1}. ${chapter.name}</strong>
-              <span>${chapter.unlocked ? `${chapter.done}/${chapter.cities.length} 城 · ${chapter.completed ? "章节完成" : chapter.active ? "进行中" : "已开放"}` : "未解锁"}</span>
-            </button>
-          `).join("")}
-        </div>
         <div class="route-overview">
           <div class="route-overview-title">
             <strong>章节目录与完整路线</strong>
@@ -17544,12 +17493,6 @@
           event.stopPropagation();
           const city = journeyCityById(button.dataset.routeCity);
           openJourneyCity(city);
-        });
-      });
-      root.querySelectorAll("[data-chapter-index]").forEach(button => {
-        button.addEventListener("click", () => {
-          const chapter = chapters[Number(button.dataset.chapterIndex)];
-          if (chapter) openChapterPreview(chapter);
         });
       });
       root.querySelectorAll("[data-preview-chapter]").forEach(card => {
@@ -19427,6 +19370,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: journey summary chapter title v89 -->
+  <!-- deploy: remove duplicate chapter scroller v90 -->
 </body>
 </html>
