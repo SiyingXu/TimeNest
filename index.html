@@ -3758,12 +3758,31 @@
       }
 
       .view.active#timer-view {
-        max-width: 720px;
+        max-width: 620px;
         margin: 0 auto;
       }
 
+      #timer-view > .panel {
+        --timer-face-size: clamp(170px, calc(100vh - 640px), 240px);
+        padding: clamp(10px, 1.4vh, 14px);
+        margin-bottom: 0;
+      }
+
+      #timer-view .mode-switch,
+      #timer-view .timer-actions,
+      #timer-view .timer-config {
+        gap: 8px;
+        margin-bottom: clamp(7px, 1.1vh, 10px);
+      }
+
       .timer-face {
-        width: min(34vw, 310px);
+        width: min(44vw, var(--timer-face-size));
+        margin: clamp(4px, 1vh, 7px) auto clamp(7px, 1.2vh, 10px);
+        box-shadow: inset 0 0 0 clamp(9px, 1.5vh, 12px) #ffffff, var(--shadow);
+      }
+
+      .timer-time {
+        font-size: clamp(32px, 5vh, 40px);
       }
 
       .view.active#rewards-view {
