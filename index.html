@@ -3348,22 +3348,30 @@
 
     .weekly-overview {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 210px;
-      gap: 18px;
+      grid-template-columns: max-content 230px;
+      gap: 22px;
       align-items: start;
+    }
+
+    .weekly-main {
+      display: grid;
+      gap: 14px;
+      align-content: start;
     }
 
     .weekly-heatmap {
       display: grid;
-      grid-template-columns: 42px repeat(7, minmax(22px, 1fr));
-      gap: 6px 8px;
+      grid-template-columns: 32px repeat(7, 13px);
+      grid-template-rows: 18px repeat(18, 13px);
+      gap: 5px 9px;
       align-items: center;
+      justify-content: start;
     }
 
     .weekly-day-label,
     .weekly-hour-label {
       color: #64748b;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 900;
       text-align: center;
     }
@@ -3374,11 +3382,16 @@
     }
 
     .weekly-cell {
-      aspect-ratio: 1;
-      min-height: 18px;
+      width: 13px;
+      height: 13px;
       border-radius: 5px;
       background: var(--cell-color, #f2f4f7);
       box-shadow: inset 0 0 0 1px rgba(31, 41, 55, .035);
+    }
+
+    .weekly-summary {
+      width: 100%;
+      max-width: 360px;
     }
 
     .weekly-side {
@@ -3423,32 +3436,6 @@
       border-radius: 999px;
       background: var(--swatch-color);
       box-shadow: inset 0 0 0 1px rgba(31,41,55,.05);
-    }
-
-    .bar-chart {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      align-items: end;
-      gap: 7px;
-      height: 142px;
-      padding-top: 12px;
-    }
-
-    .bar {
-      display: grid;
-      align-items: end;
-      gap: 6px;
-      height: 100%;
-      color: var(--muted);
-      font-size: 11px;
-      text-align: center;
-    }
-
-    .bar-fill {
-      min-height: 6px;
-      border-radius: 7px 7px 3px 3px;
-      background: linear-gradient(180deg, #e36b7f, #f0c55d);
-      box-shadow: 0 8px 14px rgba(227, 107, 127, .18);
     }
 
     nav {
@@ -3524,8 +3511,14 @@
       .shop-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
       .weekly-heatmap {
-        grid-template-columns: 34px repeat(7, minmax(16px, 1fr));
-        gap: 5px;
+        grid-template-columns: 30px repeat(7, 12px);
+        grid-template-rows: 18px repeat(18, 12px);
+        gap: 5px 7px;
+      }
+
+      .weekly-cell {
+        width: 12px;
+        height: 12px;
       }
     }
 
@@ -4891,13 +4884,20 @@
       const startDate = days[0].date;
       const endDate = days[days.length - 1].date;
       overview.innerHTML = `
-        <div class="weekly-heatmap">
-          <div></div>
-          ${days.map(day => `<div class="weekly-day-label">${day.label.replace("周", "")}</div>`).join("")}
-          ${hours.map(hour => `
-            <div class="weekly-hour-label">${String(hour).padStart(2, "0")}</div>
-            ${days.map(day => `<div class="weekly-cell" title="${day.label} ${String(hour).padStart(2, "0")}:00-${String(hour + 1).padStart(2, "0")}:00" style="--cell-color:${cellColor(day, hour)}"></div>`).join("")}
-          `).join("")}
+        <div class="weekly-main">
+          <div class="weekly-heatmap">
+            <div></div>
+            ${days.map(day => `<div class="weekly-day-label">${day.label.replace("周", "")}</div>`).join("")}
+            ${hours.map(hour => `
+              <div class="weekly-hour-label">${String(hour).padStart(2, "0")}</div>
+              ${days.map(day => `<div class="weekly-cell" title="${day.label} ${String(hour).padStart(2, "0")}:00-${String(hour + 1).padStart(2, "0")}:00" style="--cell-color:${cellColor(day, hour)}"></div>`).join("")}
+            `).join("")}
+          </div>
+          <div class="history weekly-summary">
+            <div class="history-item"><span>本周完成任务</span><strong>${weekTasks} 个</strong></div>
+            <div class="history-item"><span>计划实际完成</span><strong>${formatMinutes(weekPlanMinutes)}</strong></div>
+            <div class="history-item"><span>最佳专注日</span><strong>${bestDay.minutes ? `${bestDay.label} ${bestDay.minutes} 分` : "暂无"}</strong></div>
+          </div>
         </div>
         <div class="weekly-side">
           <div class="weekly-title">
@@ -4917,11 +4917,6 @@
               <span>未记录</span>
               <strong>-</strong>
             </div>
-          </div>
-          <div class="history">
-            <div class="history-item"><span>本周完成任务</span><strong>${weekTasks} 个</strong></div>
-            <div class="history-item"><span>计划实际完成</span><strong>${formatMinutes(weekPlanMinutes)}</strong></div>
-            <div class="history-item"><span>最佳专注日</span><strong>${bestDay.minutes ? `${bestDay.label} ${bestDay.minutes} 分` : "暂无"}</strong></div>
           </div>
         </div>
       `;
