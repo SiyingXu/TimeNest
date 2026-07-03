@@ -3354,6 +3354,8 @@
     .week-recap-card {
       display: grid;
       gap: 12px;
+      height: 100%;
+      min-height: 0;
     }
 
     .week-recap-list {
@@ -3786,11 +3788,13 @@
         display: grid;
         grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
         gap: 16px;
+        grid-auto-rows: 1fr;
         align-items: start;
       }
 
       #report-view .weekly-left {
         grid-column: 1;
+        height: 100%;
       }
 
       #report-view .weekly-grid {
@@ -3800,6 +3804,7 @@
       #report-view > .panel {
         grid-column: 2;
         margin-bottom: 0;
+        height: 100%;
       }
 
       .toast {
@@ -6710,12 +6715,19 @@
 
     function syncTimerFromClock(now = Date.now()) {
       const elapsed = currentTimerElapsed(now);
-      timer.elapsed = elapsed;
-      timer.runningSince = timer.interval ? now : null;
       if (timerMode === "countdown") {
         timer.left = Math.max(0, timer.total - elapsed);
       }
       return elapsed;
+    }
+
+    function pauseTimerClock(now = Date.now()) {
+      timer.elapsed = currentTimerElapsed(now);
+      timer.runningSince = null;
+      if (timerMode === "countdown") {
+        timer.left = Math.max(0, timer.total - timer.elapsed);
+      }
+      return timer.elapsed;
     }
 
     function updateTimerDisplay() {
@@ -6748,8 +6760,8 @@
     }
 
     function finishTimer() {
-      syncTimerFromClock();
-      const spentSeconds = timerMode === "countdown" ? timer.total - timer.left : timer.elapsed;
+      const elapsed = syncTimerFromClock();
+      const spentSeconds = timerMode === "countdown" ? timer.total - timer.left : elapsed;
       const spent = Math.max(0, Math.floor(spentSeconds / 60));
       if (spent < 1) {
         showToast("至少专注 1 分钟再结算。");
