@@ -402,8 +402,8 @@
 
     .plan-item {
       position: absolute;
-      left: 8px;
-      right: 0;
+      left: calc(8px + var(--lane-left, 0%));
+      width: calc(var(--lane-width, 100%) - 8px);
       top: var(--top);
       height: var(--height);
       min-height: 32px;
@@ -412,10 +412,10 @@
       gap: 2px;
       align-items: start;
       padding: 6px 7px 6px 9px;
-      border: 1px solid rgba(227,107,127,.28);
-      border-left: 6px solid var(--rose);
+      border: 1px solid var(--item-border, rgba(227,107,127,.28));
+      border-left: 6px solid var(--item-accent, var(--rose));
       border-radius: 8px;
-      background: #fde8ee;
+      background: var(--item-bg, #fde8ee);
       box-shadow: 0 7px 16px rgba(31,41,55,.08);
       overflow: hidden;
       cursor: pointer;
@@ -426,9 +426,9 @@
     }
 
     .record-item {
-      border-color: rgba(61,169,137,.32);
-      border-left-color: #3da989;
-      background: #eefaf5;
+      border-color: var(--item-border, rgba(61,169,137,.32));
+      border-left-color: var(--item-accent, #3da989);
+      background: var(--item-bg, #eefaf5);
     }
 
     .plan-title {
@@ -457,7 +457,12 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      color: #17644f;
+      color: var(--item-text, #17644f);
+      font-weight: 900;
+    }
+
+    .log-category {
+      color: var(--item-text, #17644f);
       font-weight: 900;
     }
 
@@ -3875,10 +3880,10 @@
     ];
 
     const logCategories = {
-      daily: { name: "日常", reward: false },
-      study: { name: "学习", reward: true },
-      work: { name: "工作", reward: true },
-      leisure: { name: "娱乐", reward: false }
+      daily: { name: "日常", reward: false, bg: "#fff7ed", border: "#fed7aa", accent: "#fb923c", text: "#9a3412" },
+      study: { name: "学习", reward: true, bg: "#ecfdf5", border: "#a7f3d0", accent: "#34d399", text: "#047857" },
+      work: { name: "工作", reward: true, bg: "#eff6ff", border: "#bfdbfe", accent: "#60a5fa", text: "#1d4ed8" },
+      leisure: { name: "娱乐", reward: false, bg: "#f5f3ff", border: "#ddd6fe", accent: "#a78bfa", text: "#6d28d9" }
     };
 
     const shopItems = [
@@ -4527,26 +4532,63 @@
 
       const planLayer = root.querySelector(".plan-events");
       const recordLayer = root.querySelector(".record-events");
-      const placeBlock = (item, layer, type, className, statusText) => {
+      const visibleRange = (item) => {
         const start = timeToMinutes(item.start);
-        const end = start + item.minutes;
+        let end = timeToMinutes(item.end);
+        if (end <= start) end += 24 * 60;
         const visibleStart = Math.max(start, timelineStart);
         const visibleEnd = Math.min(end, timelineEnd);
-        if (visibleEnd <= timelineStart || visibleStart >= timelineEnd) return;
+        if (visibleEnd <= timelineStart || visibleStart >= timelineEnd) return null;
         const top = (visibleStart - timelineStart) / timelineMinutes * 100;
         const visibleMinutes = Math.max(15, visibleEnd - visibleStart);
         const minHeight = 32 / 810 * 100;
         const height = Math.min(100 - top, Math.max(minHeight, visibleMinutes / timelineMinutes * 100));
+        const laneEnd = top + height;
+        return { start, end, visibleStart, visibleEnd, top, height, laneEnd };
+      };
+
+      const assignTimelineLanes = (items) => {
+        const blocks = items
+          .map((item, originalIndex) => ({ item, originalIndex, range: visibleRange(item) }))
+          .filter(block => block.range)
+          .sort((a, b) => a.range.visibleStart - b.range.visibleStart || a.range.visibleEnd - b.range.visibleEnd || a.originalIndex - b.originalIndex);
+        const active = [];
+        blocks.forEach(block => {
+          for (let index = active.length - 1; index >= 0; index -= 1) {
+            if (active[index].range.laneEnd <= block.range.top) active.splice(index, 1);
+          }
+          const used = new Set(active.map(item => item.lane));
+          let lane = 0;
+          while (used.has(lane)) lane += 1;
+          block.lane = lane;
+          active.push(block);
+          const group = active.slice();
+          const laneCount = Math.max(...group.map(item => item.lane)) + 1;
+          group.forEach(item => item.laneCount = Math.max(item.laneCount || 1, laneCount));
+        });
+        return blocks;
+      };
+
+      const placeBlock = (block, layer, type, className, statusText) => {
+        const { item, range } = block;
+        const displayMinutes = Math.max(1, range.end - range.start);
         const row = document.createElement("div");
         row.className = className;
-        row.style.setProperty("--top", `${top}%`);
-        row.style.setProperty("--height", `${height}%`);
+        row.style.setProperty("--top", `${range.top}%`);
+        row.style.setProperty("--height", `${range.height}%`);
+        row.style.setProperty("--lane-left", `${block.lane / block.laneCount * 100}%`);
+        row.style.setProperty("--lane-width", `${100 / block.laneCount}%`);
+        const color = logCategoryStyle(item.category);
+        row.style.setProperty("--item-bg", color.bg);
+        row.style.setProperty("--item-border", color.border);
+        row.style.setProperty("--item-accent", color.accent);
+        row.style.setProperty("--item-text", color.text);
         row.innerHTML = `
           <div>
             <div class="plan-title"></div>
             <div class="plan-meta">
               <span>${item.start}-${item.end}</span>
-              <span>${formatMinutes(item.minutes)}</span>
+              <span>${formatMinutes(displayMinutes)}</span>
               <span>${type === "log" ? `<span class="log-category">${logCategoryName(item.category)}</span>` : statusText}</span>
             </div>
           </div>
@@ -4556,13 +4598,11 @@
         layer.appendChild(row);
       };
 
-      [...state.plans]
-        .sort((a, b) => a.start.localeCompare(b.start))
-        .forEach(plan => placeBlock(plan, planLayer, "plan", `plan-item${plan.done ? " done" : ""}`, plan.done ? "已完成" : "计划中"));
+      assignTimelineLanes([...state.plans])
+        .forEach(block => placeBlock(block, planLayer, "plan", `plan-item${block.item.done ? " done" : ""}`, block.item.done ? "已完成" : "计划中"));
 
-      [...state.timeLogs]
-        .sort((a, b) => a.start.localeCompare(b.start))
-        .forEach(log => placeBlock(log, recordLayer, "log", "plan-item record-item", "记录"));
+      assignTimelineLanes([...state.timeLogs])
+        .forEach(block => placeBlock(block, recordLayer, "log", "plan-item record-item", "记录"));
     }
 
     function closeTimelineMenu() {
@@ -6082,6 +6122,10 @@
 
     function logCategoryName(category) {
       return logCategories[category]?.name || "日常";
+    }
+
+    function logCategoryStyle(category) {
+      return logCategories[category] || logCategories.daily;
     }
 
     function logRewardFor(category, minutes) {
