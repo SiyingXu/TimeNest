@@ -1477,6 +1477,8 @@
     }
 
     .passport-purchase-card {
+      height: var(--travel-panel-height, 100%);
+      max-height: var(--travel-panel-height, none);
       min-height: 100%;
       grid-template-rows: minmax(0, 1fr) auto;
       gap: 10px;
@@ -1505,6 +1507,13 @@
       height: 100%;
       object-fit: contain;
       display: block;
+    }
+
+    .passport-purchase-image .modal-card-art {
+      min-height: 0;
+      height: 100%;
+      border: 0;
+      box-shadow: none;
     }
 
     .passport-purchase-buy {
@@ -5896,14 +5905,23 @@
     }
 
     function renderPassportPurchaseCard(item) {
+      const art = resolvedCardArt(item);
+      const imageMarkup = art.cardSprite ? (() => {
+        const cols = art.cardSpriteCols || 1;
+        const rows = art.cardSpriteRows || 1;
+        const index = art.cardSpriteIndex || 0;
+        const x = spriteOffset(index % cols, cols);
+        const y = spriteOffset(Math.floor(index / cols), rows);
+        return `<div class="modal-card-art" role="img" aria-label="${item.name}" style="--modal-card-image:url('${art.cardSprite}'); --modal-card-size:${cols * 100}% ${rows * 100}%; --modal-card-x:${x}%; --modal-card-y:${y}%;"></div>`;
+      })() : `<img src="${art.cardAsset}" alt="${item.name}">`;
       const root = document.querySelector("#selectedCard");
       root.className = "selected-card passport-purchase-card";
       root.dataset.cardType = "";
       root.style.setProperty("--card-color", item.color || "#ffeef4");
-      root.style.setProperty("--card-poster", `url("${item.cardAsset}")`);
+      root.style.setProperty("--card-poster", `url("${art.cardAsset || art.cardSprite}")`);
       root.innerHTML = `
         <button class="passport-purchase-image" id="passportPreviewButton" type="button" aria-label="预览${item.name}">
-          <img src="${item.cardAsset}" alt="${item.name}">
+          ${imageMarkup}
         </button>
         <button class="primary passport-purchase-buy" id="passportBuyButton" type="button">${rewardPriceLabel(item)}</button>
       `;
