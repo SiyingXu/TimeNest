@@ -3487,6 +3487,18 @@
       position: relative;
     }
 
+    .sight-album-card.owned-stamp {
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .sight-album-card.owned-stamp:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.9) inset,
+        0 12px 24px rgba(31,41,55,.13);
+    }
+
     .sight-album-card.locked-stamp {
       filter: grayscale(.75);
       opacity: .68;
@@ -3524,7 +3536,7 @@
     }
 
     .sight-album-copy span {
-      color: currentColor;
+      color: #475467;
       font-size: 9px;
       line-height: 1.15;
       font-weight: 900;
@@ -6309,6 +6321,14 @@
             </div>
             <div class="sight-album-status">${owned ? "&check;" : unlocked ? "○" : "&#128274;"}</div>
           `;
+          card.addEventListener("click", () => {
+            if (owned) {
+              selectReward(item.id);
+              openCardPreview(item);
+              return;
+            }
+            showToast(unlocked ? `å®Œæˆå…‘æ¢åŽå¯æŸ¥çœ‹å¤§å›¾ï¼š${item.name}` : unlockHint(item));
+          });
           album.appendChild(card);
           return;
         }
@@ -7848,6 +7868,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: route side quests v86 -->
+  <!-- deploy: sight passport preview v87 -->
 </body>
 </html>
