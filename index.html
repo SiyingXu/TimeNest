@@ -3540,12 +3540,12 @@
 
     .sight-album-art {
       width: 100%;
-      aspect-ratio: 1 / 1;
-      min-height: 150px;
+      aspect-ratio: 3 / 4;
+      min-height: 0;
       border-radius: 9px;
       border: 1px solid rgba(31,41,55,.12);
       background:
-        var(--sight-card-image) var(--sight-card-x, 50%) var(--sight-card-y, 50%) / var(--sight-card-size, cover) no-repeat,
+        var(--sight-card-image) center / contain no-repeat,
         #fffdf8;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
     }
@@ -17925,15 +17925,7 @@
 
     function sightAlbumArtStyle(item) {
       const art = resolvedCardArt(item);
-      if (art.cardSprite) {
-        const cols = art.cardSpriteCols || 1;
-        const rows = art.cardSpriteRows || 1;
-        const index = art.cardSpriteIndex || 0;
-        const x = spriteOffset(index % cols, cols);
-        const y = spriteOffset(Math.floor(index / cols), rows);
-        return `--sight-card-image:url('${art.cardSprite}'); --sight-card-size:${cols * 100}% ${rows * 100}%; --sight-card-x:${x}%; --sight-card-y:${y}%;`;
-      }
-      return `--sight-card-image:url('${art.cardAsset || "assets/visual/card-pig-passport.svg"}'); --sight-card-size:cover; --sight-card-x:center; --sight-card-y:center;`;
+      return `--sight-card-image:url('${art.cardAsset || "assets/visual/card-pig-passport.svg"}');`;
     }
 
     function passportCurrentPageIndex(pages) {
@@ -18082,11 +18074,12 @@
       const owned = isOwned(item);
       const unlocked = isUnlocked(item);
       const progress = rewardProgress(item);
+      const art = resolvedCardArt(item);
       const root = document.querySelector("#selectedCard");
       root.className = `selected-card ${item.category}${owned ? " owned" : ""}${unlocked ? "" : " locked"}`;
       root.dataset.cardType = `${categoryLabel(item.category)} / ${rarityLabel(item)}`;
       root.style.setProperty("--card-color", item.color || "#eff7f4");
-      root.style.setProperty("--card-poster", `url("${item.cardAsset}")`);
+      root.style.setProperty("--card-poster", `url("${art.cardAsset || item.cardAsset}")`);
       root.innerHTML = `
         <div class="selected-card-preview" data-state="${owned ? "已收藏" : unlocked ? rewardPriceLabel(item) : "未解锁"}" aria-hidden="true"></div>
         <div class="card-top">
@@ -18575,27 +18568,33 @@
       return count <= 1 ? 0 : (index / (count - 1)) * 100;
     }
 
+    function generatedSingleCardAsset(item) {
+      return `assets/visual/generated/cards/${item.id}.png`;
+    }
+
+    function singleCardArt(item) {
+      return { cardAsset: item.singleCardAsset || generatedSingleCardAsset(item) };
+    }
+
     function resolvedCardArt(item) {
+      if (item.singleCardAsset) return { cardAsset: item.singleCardAsset };
+
       const tuebingenIndex = tuebingenRewardSpriteIndex[item.id];
-      if (Number.isInteger(tuebingenIndex)) return spriteCardArt(cardSpriteAssets.tuebingenRewards, tuebingenIndex);
+      if (Number.isInteger(tuebingenIndex)) return singleCardArt(item);
 
       const freiburgIndex = freiburgRewardSpriteIndex[item.id];
-      if (Number.isInteger(freiburgIndex)) return spriteCardArt(cardSpriteAssets.freiburgRewards, freiburgIndex);
+      if (Number.isInteger(freiburgIndex)) return singleCardArt(item);
 
       const cityRewardArt = cityRewardSpriteArt(item);
-      if (cityRewardArt && item.category !== "city") return cityRewardArt;
+      if (cityRewardArt && item.category !== "city") return singleCardArt(item);
 
       const cityId = item.routeCityId || (item.category === "city" ? item.id.replace(/-card$/, "") : item.cityId);
       const germanyIndex = cityId ? germanyCityCardOrder.indexOf(cityId) : -1;
-      if (item.category === "city" && germanyIndex >= 0) return spriteCardArt(cardSpriteAssets.germanyCities, germanyIndex);
+      if (item.category === "city" && germanyIndex >= 0) return singleCardArt(item);
+      if (item.category === "city" && cityRewardSpriteAssets[cityId]) return singleCardArt(item);
 
       if (item.cardSprite) {
-        return {
-          cardSprite: item.cardSprite,
-          cardSpriteCols: item.cardSpriteCols || 1,
-          cardSpriteRows: item.cardSpriteRows || 1,
-          cardSpriteIndex: item.cardSpriteIndex || 0
-        };
+        return singleCardArt(item);
       }
 
       return { cardAsset: item.cardAsset || "assets/visual/card-pig-passport.svg" };
@@ -18743,7 +18742,7 @@
                   const unlocked = isUnlocked(item);
                   const tilt = (rowIndex + index) % 2 === 0 ? "-1.2deg" : "1deg";
                   return `
-                    <button class="shelf-card${owned ? "" : " locked"}" data-card-id="${item.id}" style="--card-color:${item.color}; --card-poster:url('${item.cardAsset}'); --tilt:${tilt}" type="button">
+                    <button class="shelf-card${owned ? "" : " locked"}" data-card-id="${item.id}" style="--card-color:${item.color}; --card-poster:url('${resolvedCardArt(item).cardAsset || item.cardAsset}'); --tilt:${tilt}" type="button">
                       <div class="shelf-status">${owned ? "已收藏" : unlocked ? rewardPriceLabel(item) : "未解锁"}</div>
                       <div class="shelf-card-art" aria-hidden="true"></div>
                       <div class="shelf-card-copy">
@@ -19572,6 +19571,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: keep pet album cards full size v114 -->
+  <!-- deploy: use single pet card assets v115 -->
 </body>
 </html>
