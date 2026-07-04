@@ -16178,30 +16178,6 @@
             "unlockRule": "完成 3 个必游项目后可购买前往下一城车票",
             "rewardHint": "城市卡 + 40 金币",
             "contentStatus": "V1 草案"
-      },
-      {
-            "id": "ch32-city011",
-            "name": "法兰克福或柏林",
-            "country": "德国终点",
-            "chapter": "巴西与大西洋归航",
-            "chapterNo": 32,
-            "countryOrder": 1,
-            "x": 48.1,
-            "y": 39.0,
-            "visits": [
-                  "环球终点章徽章",
-                  "返航城市卡",
-                  "最终路线回顾",
-                  "世界地图点亮"
-            ],
-            "optionalVisits": [
-                  "纪念明信片",
-                  "重开新周目"
-            ],
-            "requiredCount": 3,
-            "unlockRule": "完成 3 个必游项目后可购买前往下一城车票",
-            "rewardHint": "城市卡 + 40 金币",
-            "contentStatus": "V1 草案"
       }
 ];
 
@@ -17608,7 +17584,7 @@
       root.innerHTML = `
         <div class="journey-head">
           <div>
-            <strong>环球主线：${activeChapter?.name || current.chapter}</strong>
+            <strong>环球之旅</strong>
             <span>已抵达 ${arrivedCount}/${journeyCities.length} 城</span>
           </div>
           <div class="map-chip">${progress}%</div>
@@ -17619,7 +17595,7 @@
         <div class="route-overview">
           <div class="route-overview-title">
             <strong>章节目录与完整路线</strong>
-            <span>从图宾根出发 · ${chapters.length} 章 · ${journeyCities.length} 城</span>
+            <span>共 ${chapters.length} 章 · ${journeyCities.length} 城</span>
           </div>
           <div class="route-chapter-list" aria-label="完整环球路线目录">
             ${chapters.map(chapter => `
@@ -19596,6 +19572,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: rename route chapters v107 -->
+  <!-- deploy: polish route overview copy v108 -->
 </body>
 </html>
