@@ -4656,14 +4656,79 @@
       "fussen|老城街角": "菲森老城有彩色立面和安静街角，适合在离开前慢慢收尾。"
     };
 
+    const firstChapterSightPrices = {
+      "tuebingen|内卡河小船": 80,
+      "tuebingen|老城集市": 60,
+      "tuebingen|霍亨图宾根城堡": 80,
+      "freiburg|弗赖堡大教堂": 100,
+      "freiburg|小溪水道": 60,
+      "freiburg|黑森林入口": 80,
+      "stuttgart|奔驰博物馆": 100,
+      "stuttgart|国王大街": 60,
+      "stuttgart|威廉玛花园": 80,
+      "heidelberg|海德堡城堡": 100,
+      "heidelberg|老桥": 80,
+      "heidelberg|哲学家小径": 80,
+      "frankfurt|美因河岸": 60,
+      "frankfurt|施泰德博物馆": 100,
+      "frankfurt|罗马广场": 80,
+      "cologne|科隆大教堂": 100,
+      "cologne|霍亨索伦桥": 80,
+      "cologne|莱茵河畔": 60,
+      "aachen|亚琛大教堂": 100,
+      "aachen|温泉小路": 60,
+      "aachen|查理曼中心": 80,
+      "bremen|市政厅": 100,
+      "bremen|不来梅乐队雕像": 60,
+      "bremen|施诺尔街区": 80,
+      "hamburg|仓库城": 100,
+      "hamburg|易北爱乐厅": 100,
+      "hamburg|港口渡轮": 80,
+      "lubeck|霍尔斯滕门": 100,
+      "lubeck|老城岛": 100,
+      "lubeck|杏仁糖小店": 60,
+      "berlin|博物馆岛": 100,
+      "berlin|勃兰登堡门": 100,
+      "berlin|东边画廊": 100,
+      "dresden|圣母教堂": 100,
+      "dresden|茨温格宫": 100,
+      "dresden|易北河阶地": 80,
+      "leipzig|托马斯教堂": 100,
+      "leipzig|棉纺厂": 80,
+      "leipzig|旧市政厅": 80,
+      "nuremberg|皇帝堡": 100,
+      "nuremberg|主集市广场": 80,
+      "nuremberg|玩具博物馆": 60,
+      "rothenburg|城墙步道": 80,
+      "rothenburg|普伦莱因": 100,
+      "rothenburg|圣诞博物馆": 60,
+      "ulm|乌尔姆大教堂": 100,
+      "ulm|渔人区": 80,
+      "ulm|多瑙河岸": 60,
+      "munich|玛利亚广场": 100,
+      "munich|英国花园": 80,
+      "munich|德意志博物馆": 100,
+      "fussen|新天鹅堡": 100,
+      "fussen|阿尔卑斯湖": 80,
+      "fussen|老城街角": 60
+    };
+
     function firstChapterSightDescription(city, visit) {
       return firstChapterSightDescriptions[`${city.id}|${visit}`] || `${visit} 是 ${city.name} 很值得停留的一站，适合用一枚游览章认真记下来。`;
+    }
+
+    function firstChapterSightPrice(city, visit) {
+      return firstChapterSightPrices[`${city.id}|${visit}`] || 60;
     }
 
     function firstChapterSideDescription(city, key, label) {
       if (key === "coffee") return `在${city.name}找一处舒服的街角或河畔，喝一杯咖啡休息一下吧。`;
       if (key === "library") return `在${city.name}的图书馆、书店或安静角落坐一会儿，把旅行节奏放慢。`;
       return `${label} 是 ${city.name} 的支线小停靠，适合留给想多看一眼的时候。`;
+    }
+
+    function firstChapterSidePrice(key) {
+      return key === "coffee" ? 40 : 50;
     }
 
     const spreadsheetRouteCities = [
@@ -16449,7 +16514,7 @@
         id: `${city.id}-visit-${visitIndex + 1}`,
         category: "sight",
         name: `${city.name} · ${visit}`,
-        price: isFirstChapterCity ? [60, 75, 90][visitIndex] : 60 + visitIndex * 25 + Math.min(120, index * 2),
+        price: isFirstChapterCity ? firstChapterSightPrice(city, visit) : 60 + visitIndex * 25 + Math.min(120, index * 2),
         desc: isFirstChapterCity ? firstChapterSightDescription(city, visit) : `完成一段真实学习或计划后，给小猪护照盖下 ${city.name} 的「${visit}」章。`,
         icon: visitIndex === 0 ? "VIEW" : visitIndex === 1 ? "MUSE" : "WISH",
         color: visitIndex === 0 ? "#e9fbf8" : visitIndex === 1 ? "#f0f7ff" : "#fff2e8",
@@ -16486,7 +16551,7 @@
         id: "tuebingen-coffee",
         category: "wish",
         name: "图宾根 · 喝一杯咖啡",
-        price: 45,
+        price: firstChapterSidePrice("coffee"),
         desc: firstChapterSideDescription({ name: "图宾根" }, "coffee", "喝一杯咖啡"),
         icon: "CAF",
         color: "#fff2e8",
@@ -16503,7 +16568,7 @@
         id: "tuebingen-library",
         category: "wish",
         name: "图宾根 · 图书馆小坐",
-        price: 55,
+        price: firstChapterSidePrice("library"),
         desc: firstChapterSideDescription({ name: "图宾根" }, "library", "图书馆小坐"),
         icon: "LIB",
         color: "#f0f7ff",
@@ -16529,7 +16594,7 @@
         key: "coffee",
         suffix: "C",
         label: "喝一杯咖啡",
-        price: 45,
+        price: firstChapterSidePrice("coffee"),
         icon: "CAF",
         color: "#fff2e8",
         border: "rose",
@@ -16540,7 +16605,7 @@
         key: "library",
         suffix: "L",
         label: "图书馆小坐",
-        price: 55,
+        price: firstChapterSidePrice("library"),
         icon: "LIB",
         color: "#f0f7ff",
         border: "blue",
@@ -16575,7 +16640,7 @@
         id: `${city.id}-${template.key}`,
         category: "wish",
         name: `${city.name} · ${template.label}`,
-        price: city.chapter === "德国漫游" ? template.price : (template.key === "coffee" ? 79 : 89),
+        price: city.chapter === "德国漫游" ? firstChapterSidePrice(template.key) : (template.key === "coffee" ? 79 : 89),
         desc: template.desc(city),
         icon: template.icon,
         color: template.color,
@@ -19671,6 +19736,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: improve first chapter city pages v116 -->
+  <!-- deploy: tune first chapter sightseeing prices v117 -->
 </body>
 </html>
