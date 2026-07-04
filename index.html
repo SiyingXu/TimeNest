@@ -2419,7 +2419,7 @@
     }
 
     .chapter-preview {
-      width: min(410px, 100%);
+      width: min(860px, 100%);
       max-height: min(720px, calc(100vh - 36px));
       overflow: hidden;
       border: 1px solid rgba(111,78,45,.28);
@@ -2447,6 +2447,40 @@
       display: grid;
       gap: 8px;
       overflow: auto;
+    }
+
+    .chapter-map-frame {
+      aspect-ratio: 1672 / 941;
+      border: 1px solid rgba(31,41,55,.12);
+      border-radius: 8px;
+      background: rgba(255,255,255,.72);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chapter-map-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .chapter-map-frame.locked img {
+      filter: grayscale(1) saturate(.1) contrast(.92) brightness(.96);
+      opacity: .72;
+    }
+
+    .chapter-map-state {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      border: 1px solid rgba(255,255,255,.58);
+      border-radius: 999px;
+      background: rgba(31,41,55,.76);
+      color: #fff;
+      padding: 6px 9px;
+      font-size: 11px;
+      font-weight: 900;
     }
 
     .chapter-preview-city {
@@ -17569,6 +17603,11 @@
       `;
     }
 
+    function chapterMapPreviewAsset(chapter) {
+      const number = String((chapter?.index ?? 0) + 1).padStart(2, "0");
+      return `assets/visual/generated/chapter-maps/chapter-${number}.png`;
+    }
+
     function renderJourneyPanel() {
       const root = document.querySelector("#journeyPanel");
       const currentIndex = currentJourneyIndex();
@@ -18664,54 +18703,27 @@
     }
 
     function openChapterPreview(chapter) {
-      const current = journeyCities[currentJourneyIndex()];
       const modal = document.querySelector("#cardModal");
       const status = chapter.completed ? "章节完成" : chapter.active ? "进行中" : chapter.unlocked ? "已开放" : "未解锁";
+      const mapAsset = chapterMapPreviewAsset(chapter);
       modal.innerHTML = `
         <div class="chapter-preview" role="dialog" aria-label="${chapter.name}章节预览">
           <div class="shelf-head">
             <div>
               <h3>${chapter.index + 1}. ${chapter.name}</h3>
-              <p>${status} · ${chapter.done}/${chapter.cities.length} 城已抵达。点城市可以查看对应城市卡。</p>
+              <p>${status} · ${chapter.done}/${chapter.cities.length} 城已抵达。</p>
             </div>
             <button class="card-close" id="closeChapter">×</button>
           </div>
-          <div class="chapter-preview-prize">
-            <strong>${chapter.name} · 章节纪念徽章</strong>
-            <span>${chapter.completed ? "本章城市已经全部点亮，小猪护照可收录章节纪念章。" : `抵达本章全部 ${chapter.cities.length} 座城市后点亮。`}</span>
-          </div>
-          <div class="chapter-preview-map">
-            ${chapter.cities.map((city, index) => {
-              const arrived = state.travel.arrivedCities.includes(city.id);
-              const isCurrent = city.id === current.id;
-              const unlocked = chapter.unlocked && (arrived || isCurrent || index <= chapter.done);
-              const mark = arrived && !isCurrent ? "✓" : isCurrent ? "●" : unlocked ? "→" : "□";
-              return `
-                <button class="chapter-preview-city${arrived ? " done" : ""}${isCurrent ? " current" : ""}${unlocked ? "" : " locked"}" data-chapter-city="${city.id}" type="button">
-                  <i>${mark}</i>
-                  <span>
-                    <strong>${city.name}</strong>
-                    <span>${city.country} · ${cityProgress(city.id)}/${requiredCityProgress(city)} 章 · ${city.visits.join(" / ")}</span>
-                  </span>
-                  <span>${arrived ? "已抵达" : isCurrent ? "当前" : unlocked ? "待前往" : "锁定"}</span>
-                </button>
-              `;
-            }).join("")}
+          <div class="chapter-map-frame${chapter.unlocked ? "" : " locked"}">
+            <img src="${mapAsset}" alt="${chapter.index + 1}. ${chapter.name}章节地图">
+            <span class="chapter-map-state">${chapter.unlocked ? "彩色地图" : "未解锁 · 灰色预览"}</span>
           </div>
         </div>
       `;
       modal.classList.add("active");
       modal.setAttribute("aria-hidden", "false");
       document.querySelector("#closeChapter").addEventListener("click", closeCardPreview);
-      modal.querySelectorAll("[data-chapter-city]").forEach(button => {
-        button.addEventListener("click", () => {
-          const city = journeyCityById(button.dataset.chapterCity);
-          if (!city) return;
-          closeCardPreview();
-          openJourneyCity(city);
-          showToast(city.id === state.travel.currentCityId ? `已进入：${city.name}城市探索` : `已定位到：${city.name}城市卡`);
-        });
-      });
       modal.addEventListener("click", event => {
         if (event.target === modal) closeCardPreview();
       }, { once: true });
@@ -19572,6 +19584,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: travel tab map icon v110 -->
+  <!-- deploy: chapter map preview v111 -->
 </body>
 </html>
