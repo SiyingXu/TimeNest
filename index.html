@@ -4542,6 +4542,7 @@
       ownedRewards: ["tuebingen-card"],
       pet: { food: 70, mood: 72, energy: 68 },
       travel: { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [] },
+      chapterRewards: [],
       funds: {},
       wishlist: [],
       records: [],
@@ -4597,6 +4598,73 @@
       { id: "munich", name: "慕尼黑", country: "德国", chapter: "德国漫游", x: 49, y: 42, visits: ["玛利亚广场", "英国花园", "德意志博物馆"] },
       { id: "fussen", name: "菲森", country: "德国", chapter: "德国漫游", x: 49, y: 43, visits: ["新天鹅堡", "阿尔卑斯湖", "老城街角"] },
     ];
+
+    const firstChapterSightDescriptions = {
+      "tuebingen|内卡河小船": "坐船从内卡河上看老城和河岸彩屋，是图宾根最温柔的日常风景。",
+      "tuebingen|老城集市": "老城广场保留中世纪街巷气息，集市、喷泉和木筋屋最能感受大学城生活。",
+      "tuebingen|霍亨图宾根城堡": "城堡俯瞰老城与内卡河，大学博物馆也藏着这座城市的学术记忆。",
+      "freiburg|弗赖堡大教堂": "红砂岩尖塔是弗赖堡的城市地标，广场花市让大教堂不只是古迹也很有生活气。",
+      "freiburg|小溪水道": "老城 Bächle 小水渠沿街流过，是弗赖堡最可爱的街景符号。",
+      "freiburg|黑森林入口": "从弗赖堡很容易进入黑森林，适合把城市散步延伸到山林和观景小径。",
+      "stuttgart|奔驰博物馆": "奔驰博物馆用汽车讲工业设计和德国制造史，是斯图加特最有代表性的现代景点。",
+      "stuttgart|国王大街": "国王大街连接车站与市中心，是购物、广场和城市日常最集中的地方。",
+      "stuttgart|威廉玛花园": "威廉玛结合动物园、植物园和宫廷建筑，适合慢慢逛一整个下午。",
+      "heidelberg|海德堡城堡": "城堡残垣俯瞰内卡河谷，是德国浪漫主义旅行想象中最经典的一站。",
+      "heidelberg|老桥": "老桥连接老城与河对岸山坡，晨昏时看城堡和河景尤其漂亮。",
+      "heidelberg|哲学家小径": "哲学家小径在山坡上望向老城和城堡，是海德堡最适合散步思考的路线。",
+      "frankfurt|美因河岸": "美因河岸能同时看到天际线、博物馆和桥梁，是法兰克福城市气质的缩影。",
+      "frankfurt|施泰德博物馆": "施泰德博物馆收藏跨越古典到现代艺术，是德国重要美术馆之一。",
+      "frankfurt|罗马广场": "罗马广场与重建的木筋屋立面保留老城核心记忆，适合从这里认识法兰克福。",
+      "cologne|科隆大教堂": "科隆大教堂是莱茵河畔最震撼的哥特式地标，也是城市精神中心。",
+      "cologne|霍亨索伦桥": "桥上挂满爱情锁，跨过莱茵河时能看到大教堂和城市天际线。",
+      "cologne|莱茵河畔": "莱茵河畔适合散步看船、桥和老城，是科隆最放松的城市边界。",
+      "aachen|亚琛大教堂": "亚琛大教堂与查理曼大帝关系密切，是欧洲中世纪历史的重要坐标。",
+      "aachen|温泉小路": "亚琛因温泉而兴起，温泉小路能看到这座边境城市的疗养传统。",
+      "aachen|查理曼中心": "查理曼中心讲述亚琛作为帝国城市的历史，适合补齐大教堂背后的故事。",
+      "bremen|市政厅": "不来梅市政厅是北德汉萨城市的代表建筑，广场一带很有童话感。",
+      "bremen|不来梅乐队雕像": "童话雕像是游客必摸的城市符号，也让不来梅多了一点轻快幽默。",
+      "bremen|施诺尔街区": "施诺尔街区小巷狭窄、房屋低矮，是不来梅最适合闲逛的老街区。",
+      "hamburg|仓库城": "仓库城红砖建筑与运河交织，是汉堡港口贸易历史最有画面感的部分。",
+      "hamburg|易北爱乐厅": "易北爱乐厅把港口仓库和现代音乐厅叠在一起，是汉堡新地标。",
+      "hamburg|港口渡轮": "搭港口渡轮能从水上看码头、船坞和城市，是最像汉堡的移动风景。",
+      "lubeck|霍尔斯滕门": "霍尔斯滕门是吕贝克的城门象征，也是汉萨同盟历史最醒目的入口。",
+      "lubeck|老城岛": "吕贝克老城被水环绕，红砖教堂和巷弄保留了北德中世纪城市格局。",
+      "lubeck|杏仁糖小店": "吕贝克以杏仁糖出名，甜点店是这座老城最轻松的停靠点。",
+      "berlin|博物馆岛": "博物馆岛集中多座世界级博物馆，是理解柏林文化收藏的核心区域。",
+      "berlin|勃兰登堡门": "勃兰登堡门见证分裂与统一，是柏林最重要的历史地标。",
+      "berlin|东边画廊": "东边画廊保留柏林墙遗迹，用壁画讲述自由、分裂和记忆。",
+      "dresden|圣母教堂": "圣母教堂从废墟中重建，是德累斯顿战争记忆和复兴的象征。",
+      "dresden|茨温格宫": "茨温格宫以巴洛克庭院和艺术收藏闻名，是萨克森王室审美的代表。",
+      "dresden|易北河阶地": "易北河阶地适合看老城轮廓和河景，德累斯顿的优雅感在这里最明显。",
+      "leipzig|托马斯教堂": "托马斯教堂与巴赫紧密相连，是莱比锡音乐传统的重要地点。",
+      "leipzig|棉纺厂": "旧棉纺厂改造成艺术区，展示莱比锡从工业城市到创意城市的变化。",
+      "leipzig|旧市政厅": "旧市政厅位于市中心广场，适合从这里认识莱比锡的商贸历史。",
+      "nuremberg|皇帝堡": "皇帝堡高处俯瞰老城，是纽伦堡中世纪城市权力和防御的象征。",
+      "nuremberg|主集市广场": "主集市广场是市集和圣诞市场中心，也是老城最热闹的地方。",
+      "nuremberg|玩具博物馆": "纽伦堡与玩具制造渊源很深，玩具博物馆把城市的手工传统变得很可爱。",
+      "rothenburg|城墙步道": "沿城墙绕行能完整感受罗滕堡的中世纪小镇轮廓。",
+      "rothenburg|普伦莱因": "普伦莱因是罗滕堡最上镜的路口，木筋屋和塔楼构成童话般的画面。",
+      "rothenburg|圣诞博物馆": "圣诞博物馆把全年节日气氛留在城里，是罗滕堡独特的旅行记忆。",
+      "ulm|乌尔姆大教堂": "乌尔姆大教堂拥有极高尖塔，登高可以俯瞰城市和多瑙河。",
+      "ulm|渔人区": "渔人区临水木屋和小桥密集，是乌尔姆最适合慢走拍照的老街。",
+      "ulm|多瑙河岸": "多瑙河岸连接城市与河流风景，适合把旅行节奏放慢下来。",
+      "munich|玛利亚广场": "玛利亚广场是慕尼黑老城中心，新市政厅钟楼表演很有仪式感。",
+      "munich|英国花园": "英国花园是欧洲大型城市公园之一，草地、溪流和啤酒花园都很慕尼黑。",
+      "munich|德意志博物馆": "德意志博物馆展示科学技术史，适合把旅行和好奇心连在一起。",
+      "fussen|新天鹅堡": "新天鹅堡像童话城堡一样矗立山间，是巴伐利亚最具想象力的地标。",
+      "fussen|阿尔卑斯湖": "阿尔卑斯湖在城堡山脚，湖水和山影让菲森更像旅行终章。",
+      "fussen|老城街角": "菲森老城有彩色立面和安静街角，适合在离开前慢慢收尾。"
+    };
+
+    function firstChapterSightDescription(city, visit) {
+      return firstChapterSightDescriptions[`${city.id}|${visit}`] || `${visit} 是 ${city.name} 很值得停留的一站，适合用一枚游览章认真记下来。`;
+    }
+
+    function firstChapterSideDescription(city, key, label) {
+      if (key === "coffee") return `在${city.name}找一处舒服的街角或河畔，喝一杯咖啡休息一下吧。`;
+      if (key === "library") return `在${city.name}的图书馆、书店或安静角落坐一会儿，把旅行节奏放慢。`;
+      return `${label} 是 ${city.name} 的支线小停靠，适合留给想多看一眼的时候。`;
+    }
 
     const spreadsheetRouteCities = [
       {
@@ -16354,6 +16422,7 @@
     const journeyGeneratedItems = journeyCities.flatMap((city, index) => {
       const previous = journeyCities[index - 1];
       const requiredVisits = requiredCityProgress(city);
+      const isFirstChapterCity = city.chapter === "德国漫游";
       const cityItem = {
         id: cityCardId(city.id),
         category: "city",
@@ -16380,8 +16449,8 @@
         id: `${city.id}-visit-${visitIndex + 1}`,
         category: "sight",
         name: `${city.name} · ${visit}`,
-        price: 60 + visitIndex * 25 + Math.min(120, index * 2),
-        desc: `完成一段真实学习或计划后，给小猪护照盖下 ${city.name} 的「${visit}」章。`,
+        price: isFirstChapterCity ? [60, 75, 90][visitIndex] : 60 + visitIndex * 25 + Math.min(120, index * 2),
+        desc: isFirstChapterCity ? firstChapterSightDescription(city, visit) : `完成一段真实学习或计划后，给小猪护照盖下 ${city.name} 的「${visit}」章。`,
         icon: visitIndex === 0 ? "VIEW" : visitIndex === 1 ? "MUSE" : "WISH",
         color: visitIndex === 0 ? "#e9fbf8" : visitIndex === 1 ? "#f0f7ff" : "#fff2e8",
         region: city.name,
@@ -16397,7 +16466,7 @@
         border: visitIndex === 0 ? "green" : visitIndex === 1 ? "blue" : "rose",
         art: city.id === "shanghai" ? "shanghai" : "tuebingen",
         ...journeyCardArt(city),
-        cardLine: `${city.name}游览章：${visit}。`
+        cardLine: isFirstChapterCity ? firstChapterSightDescription(city, visit) : `${city.name}游览章：${visit}。`
       }));
       return [cityItem, ...visitItems];
     });
@@ -16417,8 +16486,8 @@
         id: "tuebingen-coffee",
         category: "wish",
         name: "图宾根 · 喝一杯咖啡",
-        price: 79,
-        desc: "支线愿望：完成一段真实学习或计划后，给自己留一杯河边咖啡。",
+        price: 45,
+        desc: firstChapterSideDescription({ name: "图宾根" }, "coffee", "喝一杯咖啡"),
         icon: "CAF",
         color: "#fff2e8",
         region: "图宾根",
@@ -16428,14 +16497,14 @@
         cityId: "tuebingen",
         sideQuest: "coffee",
         border: "rose",
-        cardLine: "图宾根支线：在内卡河边喝一杯咖啡。"
+        cardLine: firstChapterSideDescription({ name: "图宾根" }, "coffee", "喝一杯咖啡")
       },
       {
         id: "tuebingen-library",
         category: "wish",
         name: "图宾根 · 图书馆小坐",
-        price: 89,
-        desc: "支线愿望：完成一段真实学习或计划后，在图书馆小坐片刻。",
+        price: 55,
+        desc: firstChapterSideDescription({ name: "图宾根" }, "library", "图书馆小坐"),
         icon: "LIB",
         color: "#f0f7ff",
         region: "图宾根",
@@ -16445,7 +16514,7 @@
         cityId: "tuebingen",
         sideQuest: "library",
         border: "blue",
-        cardLine: "图宾根支线：在窗边翻几页书，慢慢收尾。"
+        cardLine: firstChapterSideDescription({ name: "图宾根" }, "library", "图书馆小坐")
       }
     ];
 
@@ -16460,23 +16529,23 @@
         key: "coffee",
         suffix: "C",
         label: "喝一杯咖啡",
-        price: 79,
+        price: 45,
         icon: "CAF",
         color: "#fff2e8",
         border: "rose",
-        desc: city => `支线愿望：完成一段真实学习或计划后，在 ${city.name} 给自己留一杯咖啡。`,
-        cardLine: city => `${city.name}支线：喝一杯咖啡，给这座城市留一点慢下来的时间。`
+        desc: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "coffee", "喝一杯咖啡") : `支线愿望：完成一段真实学习或计划后，在 ${city.name} 给自己留一杯咖啡。`,
+        cardLine: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "coffee", "喝一杯咖啡") : `${city.name}支线：喝一杯咖啡，给这座城市留一点慢下来的时间。`
       },
       {
         key: "library",
         suffix: "L",
         label: "图书馆小坐",
-        price: 89,
+        price: 55,
         icon: "LIB",
         color: "#f0f7ff",
         border: "blue",
-        desc: city => `支线愿望：完成一段真实学习或计划后，在 ${city.name} 的图书馆小坐片刻。`,
-        cardLine: city => `${city.name}支线：在图书馆或安静角落坐一会儿，慢慢收尾。`
+        desc: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "library", "图书馆小坐") : `支线愿望：完成一段真实学习或计划后，在 ${city.name} 的图书馆小坐片刻。`,
+        cardLine: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "library", "图书馆小坐") : `${city.name}支线：在图书馆或安静角落坐一会儿，慢慢收尾。`
       }
     ];
 
@@ -16506,7 +16575,7 @@
         id: `${city.id}-${template.key}`,
         category: "wish",
         name: `${city.name} · ${template.label}`,
-        price: template.price,
+        price: city.chapter === "德国漫游" ? template.price : (template.key === "coffee" ? 79 : 89),
         desc: template.desc(city),
         icon: template.icon,
         color: template.color,
@@ -16610,6 +16679,7 @@
       if (!parsed.travel.arrivedCities.includes("tuebingen")) parsed.travel.arrivedCities.unshift("tuebingen");
       if (!parsed.travel.arrivedCities.includes(parsed.travel.currentCityId)) parsed.travel.arrivedCities.push(parsed.travel.currentCityId);
       parsed.travel.tickets = Array.isArray(parsed.travel.tickets) ? parsed.travel.tickets : [];
+      parsed.chapterRewards = Array.isArray(parsed.chapterRewards) ? parsed.chapterRewards : [];
       parsed.funds ??= {};
       parsed.wishlist ??= [];
       parsed.records ??= [];
@@ -17560,6 +17630,28 @@
       return journeyChapters().find(chapter => chapter.cities.some(city => city.id === current.id));
     }
 
+    function chapterRewardId(chapter) {
+      return `chapter-${chapter.index + 1}`;
+    }
+
+    function isChapterRewardClaimed(chapter) {
+      state.chapterRewards = Array.isArray(state.chapterRewards) ? state.chapterRewards : [];
+      return state.chapterRewards.includes(chapterRewardId(chapter));
+    }
+
+    function claimChapterReward(chapter) {
+      if (!chapter?.completed) {
+        showToast("完成本章全部城市后可以领取章节奖励。");
+        return;
+      }
+      if (isChapterRewardClaimed(chapter)) {
+        showToast("这一章的奖励已经领取过啦。");
+        return;
+      }
+      state.chapterRewards.push(chapterRewardId(chapter));
+      addCoins(100, `${chapter.name}章节奖励`, { kind: "chapter-reward", chapter: chapter.name });
+    }
+
     function chapterCityPosition(chapter, city) {
       const custom = {
         "德国漫游": {
@@ -18374,24 +18466,26 @@
       const ticketOwned = isTravelTicketOwned(ticket);
       const ticketReady = ticket && isMainCurrentCity && (progress >= requiredProgress || ticketOwned);
       const chapter = journeyChapters().find(item => item.cities.some(chapterCity => chapterCity.id === city.id));
+      const chapterRewardClaimed = chapter ? isChapterRewardClaimed(chapter) : false;
+      const chapterRewardReady = Boolean(chapter?.completed && !chapterRewardClaimed);
       root.className = "current-city-card";
       root.innerHTML = `
         <div class="journey-head">
           <div>
-            <h3>${city.name} · 当前城市</h3>
+            <h3>当前城市：${city.name}</h3>
             <p>${city.country} · ${city.chapter} · ${next ? (isMainCurrentCity ? `本城盖满 ${requiredProgress} 章后购买交通票前往 ${next.name}` : `浏览 ${city.name} 的城市卡和游览章`) : "环球路线最后一站"}</p>
           </div>
           <div class="map-chip">${progress}/${requiredProgress}</div>
         </div>
         <div class="journey-progress" aria-label="当前城市进度"><div style="--progress:${progress / requiredProgress * 100}%"></div></div>
         ${chapter ? `
-          <div class="city-task chapter-prize-task${chapter.completed ? " done" : " locked"}">
-            <div class="city-task-icon">${chapter.completed ? "★" : "LOCK"}</div>
+          <div class="city-task chapter-prize-task${chapterRewardReady ? "" : chapterRewardClaimed ? " done" : " locked"}" data-chapter-reward="${chapter.index}">
+            <div class="city-task-icon">${chapterRewardReady ? "100" : chapterRewardClaimed ? "✓" : "LOCK"}</div>
             <div class="city-task-copy">
-              <strong>${chapter.name} · 章节纪念徽章</strong>
-              <span>${chapter.completed ? "本章城市全部点亮，章节徽章已收入小猪护照。" : `抵达本章 ${chapter.cities.length} 座城市后点亮。当前 ${chapter.done}/${chapter.cities.length}。`}</span>
+              <strong>${chapter.name} · 章节奖励</strong>
+              <span>${chapterRewardClaimed ? "本章 100 金币奖励已领取。" : chapter.completed ? "本章城市全部点亮，可以领取 100 金币奖励。" : `抵达本章 ${chapter.cities.length} 座城市后可领取 100 金币。当前 ${chapter.done}/${chapter.cities.length}。`}</span>
             </div>
-            <button class="secondary" type="button" disabled>${chapter.completed ? "已点亮" : "章节奖励"}</button>
+            <button class="${chapterRewardReady ? "primary" : "secondary"}" type="button" ${chapterRewardReady ? "" : "disabled"}>${chapterRewardReady ? "领取 100 金币" : chapterRewardClaimed ? "已领取" : "未完成"}</button>
           </div>
         ` : ""}
         <div class="city-task-list">
@@ -18410,26 +18504,26 @@
             const unlocked = isUnlocked(item);
             return `
               <div class="city-task${selectedRewardId === item.id ? " selected" : ""}${owned ? " done" : ""}${unlocked ? "" : " locked"}" data-task-reward="${item.id}">
-                <div class="city-task-icon">${owned ? "✓" : item.stamp || item.icon}</div>
+                <div class="city-task-icon">${owned ? "✓" : item.visitIndex || "1"}</div>
                 <div class="city-task-copy">
                   <strong>${item.name.replace(`${city.name} · `, "")}</strong>
-                  <span>${owned ? "已盖章。" : unlocked ? item.desc : unlockHint(item)}</span>
+                  <span>${unlocked ? item.desc : unlockHint(item)}</span>
                 </div>
                 <button class="${owned ? "secondary" : "primary"}" data-action="buy">${rewardPriceLabel(item)}</button>
               </div>
             `;
           }).join("")}
           ${sideQuests.length ? `
-            <div class="city-task-section">支线任务 / 愿望清单</div>
-            ${sideQuests.map(item => {
+            <div class="city-task-section">支线景点</div>
+            ${sideQuests.map((item, index) => {
               const owned = isOwned(item);
               const unlocked = isUnlocked(item);
               return `
                 <div class="city-task side-quest${selectedRewardId === item.id ? " selected" : ""}${owned ? " done" : ""}${unlocked ? "" : " locked"}" data-task-reward="${item.id}">
-                  <div class="city-task-icon">${owned ? "✓" : item.stamp || item.icon}</div>
+                  <div class="city-task-icon">${owned ? "✓" : index + 1}</div>
                   <div class="city-task-copy">
                     <strong>${item.name.replace(`${city.name} · `, "")}</strong>
-                    <span>${owned ? "已加入愿望清单。" : unlocked ? item.desc : unlockHint(item)}</span>
+                    <span>${unlocked ? item.desc : unlockHint(item)}</span>
                   </div>
                   <button class="${owned ? "secondary" : "primary"}" data-action="buy">${rewardPriceLabel(item)}</button>
                 </div>
@@ -18463,6 +18557,12 @@
             showToast(isUnlocked(item) ? `点击右侧按钮兑换：${item.name}` : unlockHint(item));
           }
         });
+      });
+      root.querySelector("[data-chapter-reward]")?.addEventListener("click", event => {
+        if (!event.target.closest("button")) return;
+        const chapterIndex = Number(event.currentTarget.dataset.chapterReward);
+        const rewardChapter = journeyChapters().find(item => item.index === chapterIndex);
+        claimChapterReward(rewardChapter);
       });
       root.querySelector("[data-travel-ticket]")?.addEventListener("click", event => {
         const ticket = cityTravelTicket(city.id);
@@ -19571,6 +19671,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: use single pet card assets v115 -->
+  <!-- deploy: improve first chapter city pages v116 -->
 </body>
 </html>
