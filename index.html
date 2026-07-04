@@ -18793,8 +18793,22 @@
       return `<img src="${art.cardAsset}" alt="${item.name}">`;
     }
 
+    function modalCardCountry(item) {
+      const cityId = item.routeCityId || item.cityId || (item.category === "city" ? item.id.replace(/-card$/, "") : null);
+      return journeyCityById(cityId)?.country || item.region || "旅行";
+    }
+
+    function modalCardTags(item) {
+      if (item.id === "pig-passport") return ["旅行必备", `${item.price}金币`];
+      if (item.category === "city") return [modalCardCountry(item), "城市卡"];
+      if (item.category === "ticket") return [item.type || "交通票", `${item.price}金币`];
+      if (item.category === "sight" || item.cityId) return [modalCardCountry(item), "景点", `${item.price}金币`];
+      return [categoryLabel(item.category), item.price ? `${item.price}金币` : rarityLabel(item)];
+    }
+
     function openCardPreview(item) {
       const modal = document.querySelector("#cardModal");
+      const tags = modalCardTags(item);
       modal.innerHTML = `
         <div class="collect-card asset-card" role="dialog" aria-label="${item.name}卡牌预览">
           <button class="card-close" id="closeCard">×</button>
@@ -18803,10 +18817,7 @@
             <strong>${item.name}</strong>
             <span>${item.cardLine || item.desc}</span>
             <div class="modal-card-stamps">
-              <i>${categoryLabel(item.category)}</i>
-              <i>${rarityLabel(item)}</i>
-              <i>${item.price ? `${item.price} 金币` : "Base"}</i>
-              <i>${item.stamp || item.icon}</i>
+              ${tags.map(tag => `<i>${tag}</i>`).join("")}
             </div>
           </div>
         </div>
@@ -19751,6 +19762,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: distance-based travel ticket prices v118 -->
+  <!-- deploy: simplify card preview tags v119 -->
 </body>
 </html>
