@@ -3266,7 +3266,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       min-height: 0;
-      overflow: hidden;
+      overflow: auto;
       padding: 2px 3px 8px 2px;
       scrollbar-width: thin;
     }
@@ -3528,6 +3528,10 @@
     .sight-album-card.locked-stamp {
       filter: grayscale(.75);
       opacity: .68;
+    }
+
+    .sight-album-card.locked-stamp .sight-album-art {
+      filter: grayscale(1) contrast(.92) brightness(.96);
     }
 
     .sight-album-art {
@@ -17878,23 +17882,39 @@
       return [...unique.values()].sort((a, b) => routeOrder(a) - routeOrder(b) || visitOrder(a) - visitOrder(b) || a.name.localeCompare(b.name, "zh-CN"));
     }
 
-    function passportPageLimit(category) {
-      return category === "sight" ? 9 : 18;
+    function passportCategoryLabel(category) {
+      return {
+        city: "城市",
+        sight: "景点·主线",
+        wish: "景点·支线"
+      }[category] || "卡牌";
+    }
+
+    function passportProgressUnit(category) {
+      return {
+        city: "城市卡",
+        sight: "主线景点",
+        wish: "支线景点"
+      }[category] || "卡牌";
+    }
+
+    function isPassportCardLit(item, category = activeStampCategory) {
+      const cityId = passportCityId(item);
+      if (category === "city") return Boolean(cityId && state.travel?.arrivedCities?.includes(cityId));
+      return isOwned(item);
     }
 
     function passportPages(category) {
       const chapters = journeyChapters();
-      const stampLimit = passportPageLimit(category);
-      return chapters.flatMap(chapter => {
+      return chapters.map(chapter => {
         const stamps = passportStampItems(category, chapter);
-        const parts = Math.max(1, Math.ceil(stamps.length / stampLimit));
-        return Array.from({ length: parts }, (_, partIndex) => ({
+        return {
           chapter,
-          partIndex,
-          partCount: parts,
-          stamps: stamps.slice(partIndex * stampLimit, partIndex * stampLimit + stampLimit),
+          partIndex: 0,
+          partCount: 1,
+          stamps,
           total: stamps.length
-        }));
+        };
       });
     }
 
@@ -17913,6 +17933,9 @@
 
     function passportCurrentPageIndex(pages) {
       const chapter = currentChapter();
+      const currentCityId = state.travel?.currentCityId;
+      const cityMatch = pages.findIndex(page => page.stamps.some(item => passportCityId(item) === currentCityId));
+      if (cityMatch >= 0) return cityMatch;
       return Math.max(0, pages.findIndex(page => page.chapter.index === chapter?.index));
     }
 
@@ -17931,7 +17954,7 @@
       const pageChapter = page?.chapter || currentChapter();
       const pageChapterText = pageChapter ? `第 ${pageChapter.index + 1} 章 · ${pageChapter.name}` : "旅行卡册";
       document.querySelector(".passport-title strong").textContent = pageChapterText;
-      const passportPageKind = activeStampCategory === "sight" ? "景点卡牌" : `${categoryLabel(activeStampCategory)}邮戳`;
+      const passportPageKind = passportProgressUnit(activeStampCategory);
       document.querySelector("#pigStatus").textContent = `${passportPageKind} · ${page?.partCount > 1 ? `${page.partIndex + 1}/${page.partCount}` : "章节页"}`;
       document.querySelector("#pigTravelTitle").textContent = `小猪正在 ${current.name}`;
       document.querySelector("#pigTravelNote").textContent = next
@@ -17944,8 +17967,8 @@
       tabRoot.innerHTML = "";
       [
         { id: "city", name: "城市" },
-        { id: "sight", name: "景点" },
-        { id: "wish", name: "愿望" }
+        { id: "sight", name: "景点·主线" },
+        { id: "wish", name: "景点·支线" }
       ].forEach(tabInfo => {
         const tab = document.createElement("button");
         tab.className = `stamp-tab${activeStampCategory === tabInfo.id ? " active" : ""}`;
@@ -17960,90 +17983,50 @@
 
       const pageCount = Math.max(1, pages.length);
       const visibleStamps = page?.stamps || [];
-      const visibleOwnedCount = visibleStamps.filter(isOwned).length;
+      const visibleOwnedCount = visibleStamps.filter(item => isPassportCardLit(item, activeStampCategory)).length;
       const colors = ["#178f72", "#2563eb", "#e0523f", "#1f2937", "#7c3aed", "#d24777", "#0f766e", "#b45309"];
-      const stampSprite = {
-        url: "assets/visual/generated/pet-stamp-germany-sprite.png",
-        cols: 5,
-        rows: 3
-      };
       const progressHead = document.querySelector("#passportProgressHead");
       const pageTotal = page?.total || visibleStamps.length;
       const progressPercent = pageTotal ? Math.min(100, Math.round(visibleOwnedCount / pageTotal * 100)) : 0;
-      if (activeStampCategory === "city") {
-        progressHead.hidden = false;
-        progressHead.innerHTML = `
-          <div class="stamp-progress-copy">
-            <strong>${visibleOwnedCount} / ${pageTotal}</strong>
-            <span>${categoryLabel(activeStampCategory)}卡</span>
-          </div>
-          <div class="stamp-progress-track" aria-label="${categoryLabel(activeStampCategory)}收集进度">
-            <div style="--progress:${progressPercent}%"></div>
-          </div>
-        `;
-      } else {
-        progressHead.hidden = true;
-        progressHead.innerHTML = "";
-      }
+      progressHead.hidden = false;
+      progressHead.innerHTML = `
+        <div class="stamp-progress-copy">
+          <strong>${visibleOwnedCount} / ${pageTotal}</strong>
+          <span>${passportProgressUnit(activeStampCategory)}</span>
+        </div>
+        <div class="stamp-progress-track" aria-label="${passportCategoryLabel(activeStampCategory)}收集进度">
+          <div style="--progress:${progressPercent}%"></div>
+        </div>
+      `;
       const album = document.querySelector("#stampAlbum");
       album.innerHTML = "";
       album.dataset.note = "";
-      album.classList.toggle("city-stamp-album", activeStampCategory === "city");
-      album.classList.toggle("sight-card-album", activeStampCategory === "sight");
+      album.classList.toggle("city-stamp-album", false);
+      album.classList.toggle("sight-card-album", true);
       visibleStamps.forEach((item, index) => {
-        const owned = isOwned(item);
+        const owned = isPassportCardLit(item, activeStampCategory);
         const unlocked = isUnlocked(item);
-        const globalIndex = pageChapter.firstRouteIndex + index + page.partIndex * passportPageLimit(activeStampCategory);
-        if (activeStampCategory === "sight") {
-          const card = document.createElement("div");
-          card.className = `sight-album-card${owned ? " owned-stamp" : " locked-stamp"}`;
-          card.style.setProperty("--stamp-color", colors[globalIndex % colors.length]);
-          card.setAttribute("aria-label", item.name);
-          card.innerHTML = `
-            <div class="sight-album-art" style="${sightAlbumArtStyle(item)}" aria-hidden="true"></div>
-            <div class="sight-album-copy">
-              <strong>${item.name.replace(`${journeyCityById(item.cityId)?.name || ""} · `, "")}</strong>
-              <span>${stampLocationLabel(item)}</span>
-            </div>
-            <div class="sight-album-status">${owned ? "&check;" : unlocked ? "○" : "&#128274;"}</div>
-          `;
-          card.addEventListener("click", () => {
-            if (owned) {
-              selectReward(item.id);
-              openCardPreview(item);
-              return;
-            }
-            showToast(unlocked ? `å®Œæˆå…‘æ¢åŽå¯æŸ¥çœ‹å¤§å›¾ï¼š${item.name}` : unlockHint(item));
-          });
-          album.appendChild(card);
-          return;
-        }
+        const globalIndex = (pageChapter?.firstRouteIndex || 0) + index;
+        const city = journeyCityById(passportCityId(item));
         const card = document.createElement("div");
-        card.className = `stamp-card${owned ? " owned-stamp" : " locked-stamp"}`;
+        card.className = `sight-album-card${owned ? " owned-stamp" : " locked-stamp"}`;
         card.style.setProperty("--stamp-color", colors[globalIndex % colors.length]);
-        card.style.setProperty("--stamp-art-image", `url("${stampSprite.url}")`);
-        card.style.setProperty("--stamp-art-size", `${stampSprite.cols * 100}% ${stampSprite.rows * 100}%`);
-        card.style.setProperty("--stamp-art-x", `${(globalIndex % stampSprite.cols) / Math.max(stampSprite.cols - 1, 1) * 100}%`);
-        card.style.setProperty("--stamp-art-y", `${(Math.floor(globalIndex / stampSprite.cols) % stampSprite.rows) / Math.max(stampSprite.rows - 1, 1) * 100}%`);
-        card.dataset.status = owned ? "STAMPED" : unlocked ? "EMPTY" : "LOCKED";
+        card.setAttribute("aria-label", item.name);
         card.innerHTML = `
-          <div class="stamp-visual" data-stamp="${owned ? (item.stamp || item.icon) : "..."}"></div>
-          <div class="stamp-info">
-            <strong>${item.name}</strong>
-            <span>${item.region || "TimeNest"}</span>
+          <div class="sight-album-art" style="${sightAlbumArtStyle(item)}" aria-hidden="true"></div>
+          <div class="sight-album-copy">
+            <strong>${item.name.replace(`${city?.name || ""} · `, "")}</strong>
+            <span>${stampLocationLabel(item)}</span>
           </div>
-          <div class="stamp-date">${owned ? "&check;" : "&#128274;"}</div>
+          <div class="sight-album-status">${owned ? "&check;" : "&#128274;"}</div>
         `;
         card.addEventListener("click", () => {
-          if (!unlocked) {
-            showToast(unlockHint(item));
+          if (owned) {
+            selectReward(item.id);
+            openCardPreview(item);
             return;
           }
-          card.classList.remove("stamp-pressed");
-          void card.offsetWidth;
-          card.classList.add("stamp-pressed");
-          selectReward(item.id);
-          openCardPreview(item);
+          showToast(unlocked ? `完成兑换后可点亮：${item.name}` : unlockHint(item));
         });
         album.appendChild(card);
       });
@@ -18051,7 +18034,7 @@
       const pager = document.querySelector("#stampPager");
       pager.innerHTML = `
         <button class="stamp-page-button" type="button" data-stamp-page="prev" ${activeStampPage <= 0 ? "disabled" : ""}>‹</button>
-        <div class="stamp-page-status">${pageChapterText}${page?.partCount > 1 ? ` · ${page.partIndex + 1}/${page.partCount}` : ""} · ${visibleStamps.filter(isOwned).length} / ${page?.total || 0} 枚</div>
+        <div class="stamp-page-status">${pageChapterText} · ${visibleOwnedCount} / ${page?.total || 0} 枚</div>
         <button class="stamp-page-button" type="button" data-stamp-page="next" ${activeStampPage >= pageCount - 1 ? "disabled" : ""}>›</button>
       `;
       pager.querySelector('[data-stamp-page="prev"]').addEventListener("click", () => {
@@ -19584,6 +19567,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: simplify chapter map status v112 -->
+  <!-- deploy: unify pet passport cards v113 -->
 </body>
 </html>
