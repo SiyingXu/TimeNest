@@ -17500,24 +17500,24 @@
     function chapterCityPosition(chapter, city) {
       const custom = {
         "德国漫游": {
-          lubeck: { x: 52, y: 12 },
-          hamburg: { x: 48, y: 18 },
-          bremen: { x: 39, y: 25 },
-          berlin: { x: 68, y: 32 },
-          leipzig: { x: 61, y: 47 },
-          dresden: { x: 74, y: 51 },
-          aachen: { x: 12, y: 51 },
-          cologne: { x: 18, y: 51 },
-          frankfurt: { x: 31, y: 61 },
-          heidelberg: { x: 34, y: 70 },
-          stuttgart: { x: 40, y: 79 },
-          tuebingen: { x: 39, y: 86 },
-          freiburg: { x: 24, y: 89 },
-          ulm: { x: 50, y: 82 },
-          rothenburg: { x: 52, y: 69 },
-          nuremberg: { x: 60, y: 65 },
-          munich: { x: 64, y: 86 },
-          fussen: { x: 58, y: 94 }
+          lubeck: { x: 59.2, y: 20.0 },
+          hamburg: { x: 42.2, y: 21.2 },
+          bremen: { x: 34.0, y: 29.1 },
+          berlin: { x: 68.5, y: 30.6 },
+          leipzig: { x: 56.4, y: 52.6 },
+          dresden: { x: 74.6, y: 52.3 },
+          aachen: { x: 15.6, y: 53.8 },
+          cologne: { x: 20.4, y: 51.5 },
+          frankfurt: { x: 34.9, y: 46.9 },
+          heidelberg: { x: 30.8, y: 63.5 },
+          stuttgart: { x: 32.4, y: 65.7 },
+          tuebingen: { x: 33.5, y: 75.4 },
+          freiburg: { x: 23.2, y: 87.2 },
+          ulm: { x: 64.6, y: 75.7 },
+          rothenburg: { x: 55.0, y: 63.2 },
+          nuremberg: { x: 55.8, y: 72.4 },
+          munich: { x: 65.4, y: 84.2 },
+          fussen: { x: 57.3, y: 89.7 }
         }
       };
       if (custom[chapter.name]?.[city.id]) return custom[chapter.name][city.id];
@@ -18130,105 +18130,155 @@
         },
         freiburg: {
           [cityCard?.id || "freiburg-card"]: { x: 48, y: 54 },
-          "freiburg-visit-1": { x: 56, y: 40 },
-          "freiburg-visit-2": { x: 47, y: 63 },
-          "freiburg-visit-3": { x: 76, y: 26 }
+          "freiburg-visit-1": { x: 56, y: 34 },
+          "freiburg-visit-2": { x: 38, y: 61 },
+          "freiburg-visit-3": { x: 78, y: 20 },
+          "freiburg-coffee": { x: 47, y: 71 },
+          "freiburg-library": { x: 24, y: 30 },
+          "ticket-freiburg-to-stuttgart": { x: 10, y: 44 }
         },
         stuttgart: {
           [cityCard?.id || "stuttgart-card"]: { x: 48, y: 58 },
-          "stuttgart-visit-1": { x: 67, y: 50 },
-          "stuttgart-visit-2": { x: 48, y: 47 },
-          "stuttgart-visit-3": { x: 73, y: 28 }
+          "stuttgart-visit-1": { x: 79, y: 25 },
+          "stuttgart-visit-2": { x: 50, y: 55 },
+          "stuttgart-visit-3": { x: 24, y: 49 },
+          "stuttgart-coffee": { x: 46, y: 75 },
+          "stuttgart-library": { x: 34, y: 45 },
+          "ticket-stuttgart-to-heidelberg": { x: 10, y: 58 }
         },
         heidelberg: {
-          [cityCard?.id || "heidelberg-card"]: { x: 48, y: 60 },
-          "heidelberg-visit-1": { x: 66, y: 30 },
-          "heidelberg-visit-2": { x: 50, y: 68 },
-          "heidelberg-visit-3": { x: 35, y: 28 }
+          [cityCard?.id || "heidelberg-card"]: { x: 50, y: 61 },
+          "heidelberg-visit-1": { x: 27, y: 22 },
+          "heidelberg-visit-2": { x: 73, y: 72 },
+          "heidelberg-visit-3": { x: 76, y: 22 },
+          "heidelberg-coffee": { x: 57, y: 75 },
+          "heidelberg-library": { x: 18, y: 66 },
+          "ticket-heidelberg-to-frankfurt": { x: 14, y: 57 }
         },
         frankfurt: {
           [cityCard?.id || "frankfurt-card"]: { x: 48, y: 56 },
-          "frankfurt-visit-1": { x: 57, y: 68 },
-          "frankfurt-visit-2": { x: 38, y: 62 },
-          "frankfurt-visit-3": { x: 47, y: 49 }
+          "frankfurt-visit-1": { x: 66, y: 70 },
+          "frankfurt-visit-2": { x: 36, y: 64 },
+          "frankfurt-visit-3": { x: 45, y: 51 },
+          "frankfurt-coffee": { x: 58, y: 54 },
+          "frankfurt-library": { x: 30, y: 45 },
+          "ticket-frankfurt-to-cologne": { x: 21, y: 31 }
         },
         cologne: {
           [cityCard?.id || "cologne-card"]: { x: 45, y: 56 },
           "cologne-visit-1": { x: 46, y: 40 },
           "cologne-visit-2": { x: 66, y: 64 },
-          "cologne-visit-3": { x: 72, y: 58 }
+          "cologne-visit-3": { x: 82, y: 50 },
+          "cologne-coffee": { x: 33, y: 62 },
+          "cologne-library": { x: 61, y: 45 },
+          "ticket-cologne-to-aachen": { x: 22, y: 58 }
         },
         aachen: {
           [cityCard?.id || "aachen-card"]: { x: 49, y: 57 },
           "aachen-visit-1": { x: 51, y: 43 },
-          "aachen-visit-2": { x: 34, y: 63 },
-          "aachen-visit-3": { x: 62, y: 54 }
+          "aachen-visit-2": { x: 32, y: 68 },
+          "aachen-visit-3": { x: 62, y: 56 },
+          "aachen-coffee": { x: 43, y: 74 },
+          "aachen-library": { x: 25, y: 60 },
+          "ticket-aachen-to-bremen": { x: 72, y: 74 }
         },
         bremen: {
           [cityCard?.id || "bremen-card"]: { x: 49, y: 58 },
           "bremen-visit-1": { x: 50, y: 46 },
           "bremen-visit-2": { x: 58, y: 51 },
-          "bremen-visit-3": { x: 37, y: 65 }
+          "bremen-visit-3": { x: 37, y: 65 },
+          "bremen-coffee": { x: 48, y: 72 },
+          "bremen-library": { x: 31, y: 48 },
+          "ticket-bremen-to-hamburg": { x: 68, y: 72 }
         },
         hamburg: {
           [cityCard?.id || "hamburg-card"]: { x: 51, y: 57 },
           "hamburg-visit-1": { x: 42, y: 54 },
           "hamburg-visit-2": { x: 63, y: 43 },
-          "hamburg-visit-3": { x: 70, y: 70 }
+          "hamburg-visit-3": { x: 75, y: 70 },
+          "hamburg-coffee": { x: 47, y: 66 },
+          "hamburg-library": { x: 30, y: 43 },
+          "ticket-hamburg-to-lubeck": { x: 20, y: 74 }
         },
         lubeck: {
           [cityCard?.id || "lubeck-card"]: { x: 49, y: 56 },
           "lubeck-visit-1": { x: 35, y: 58 },
           "lubeck-visit-2": { x: 54, y: 52 },
-          "lubeck-visit-3": { x: 64, y: 61 }
+          "lubeck-visit-3": { x: 64, y: 61 },
+          "lubeck-coffee": { x: 55, y: 72 },
+          "lubeck-library": { x: 44, y: 38 },
+          "ticket-lubeck-to-berlin": { x: 18, y: 68 }
         },
         berlin: {
           [cityCard?.id || "berlin-card"]: { x: 50, y: 56 },
           "berlin-visit-1": { x: 54, y: 48 },
           "berlin-visit-2": { x: 44, y: 56 },
-          "berlin-visit-3": { x: 65, y: 67 }
+          "berlin-visit-3": { x: 72, y: 67 },
+          "berlin-coffee": { x: 48, y: 76 },
+          "berlin-library": { x: 34, y: 46 },
+          "ticket-berlin-to-dresden": { x: 22, y: 58 }
         },
         dresden: {
           [cityCard?.id || "dresden-card"]: { x: 50, y: 57 },
           "dresden-visit-1": { x: 49, y: 43 },
           "dresden-visit-2": { x: 38, y: 53 },
-          "dresden-visit-3": { x: 58, y: 67 }
+          "dresden-visit-3": { x: 58, y: 67 },
+          "dresden-coffee": { x: 51, y: 72 },
+          "dresden-library": { x: 32, y: 45 },
+          "ticket-dresden-to-leipzig": { x: 22, y: 72 }
         },
         leipzig: {
           [cityCard?.id || "leipzig-card"]: { x: 49, y: 57 },
           "leipzig-visit-1": { x: 48, y: 43 },
           "leipzig-visit-2": { x: 68, y: 60 },
-          "leipzig-visit-3": { x: 40, y: 52 }
+          "leipzig-visit-3": { x: 40, y: 52 },
+          "leipzig-coffee": { x: 49, y: 70 },
+          "leipzig-library": { x: 31, y: 60 },
+          "ticket-leipzig-to-nuremberg": { x: 20, y: 72 }
         },
         nuremberg: {
           [cityCard?.id || "nuremberg-card"]: { x: 49, y: 58 },
           "nuremberg-visit-1": { x: 60, y: 31 },
           "nuremberg-visit-2": { x: 48, y: 55 },
-          "nuremberg-visit-3": { x: 36, y: 62 }
+          "nuremberg-visit-3": { x: 36, y: 62 },
+          "nuremberg-coffee": { x: 52, y: 70 },
+          "nuremberg-library": { x: 38, y: 48 },
+          "ticket-nuremberg-to-rothenburg": { x: 22, y: 74 }
         },
         rothenburg: {
           [cityCard?.id || "rothenburg-card"]: { x: 48, y: 58 },
           "rothenburg-visit-1": { x: 70, y: 42 },
           "rothenburg-visit-2": { x: 49, y: 61 },
-          "rothenburg-visit-3": { x: 37, y: 54 }
+          "rothenburg-visit-3": { x: 37, y: 54 },
+          "rothenburg-coffee": { x: 48, y: 70 },
+          "rothenburg-library": { x: 31, y: 48 },
+          "ticket-rothenburg-to-ulm": { x: 20, y: 72 }
         },
         ulm: {
           [cityCard?.id || "ulm-card"]: { x: 49, y: 58 },
           "ulm-visit-1": { x: 52, y: 38 },
           "ulm-visit-2": { x: 40, y: 62 },
-          "ulm-visit-3": { x: 58, y: 73 }
+          "ulm-visit-3": { x: 58, y: 73 },
+          "ulm-coffee": { x: 47, y: 72 },
+          "ulm-library": { x: 32, y: 50 },
+          "ticket-ulm-to-munich": { x: 18, y: 70 }
         },
         munich: {
           [cityCard?.id || "munich-card"]: { x: 49, y: 57 },
           "munich-visit-1": { x: 50, y: 47 },
           "munich-visit-2": { x: 73, y: 31 },
-          "munich-visit-3": { x: 60, y: 63 }
+          "munich-visit-3": { x: 60, y: 63 },
+          "munich-coffee": { x: 47, y: 72 },
+          "munich-library": { x: 35, y: 47 },
+          "ticket-munich-to-fussen": { x: 18, y: 68 }
         },
         fussen: {
           [cityCard?.id || "fussen-card"]: { x: 45, y: 61 },
           "fussen-visit-1": { x: 72, y: 35 },
           "fussen-visit-2": { x: 34, y: 25 },
-          "fussen-visit-3": { x: 47, y: 64 }
+          "fussen-visit-3": { x: 47, y: 64 },
+          "fussen-coffee": { x: 50, y: 75 },
+          "fussen-library": { x: 30, y: 58 }
         },
         shanghai: {
           [cityCard?.id || "shanghai-card"]: { x: 48, y: 58 },
@@ -19478,6 +19528,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: remove travel page duplicate coin badge v95 -->
+  <!-- deploy: realign travel map bubbles v96 -->
 </body>
 </html>
