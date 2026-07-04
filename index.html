@@ -17508,13 +17508,26 @@
       return span > 26 ? "长途机票" : "跨区交通票";
     }
 
+    function routeDistanceScore(fromCity, toCity) {
+      const dx = (toCity.x || 0) - (fromCity.x || 0);
+      const dy = (toCity.y || 0) - (fromCity.y || 0);
+      return Math.hypot(dx, dy);
+    }
+
+    function cappedRoundedPrice(value, min, max) {
+      const capped = Math.max(min, Math.min(max, value));
+      return Math.round(capped / 10) * 10;
+    }
+
     function travelTicketPrice(fromCity, toCity) {
-      const span = Math.abs(toCity.x - fromCity.x) + Math.abs(toCity.y - fromCity.y);
-      if (fromCity.country === toCity.country) return 90;
-      if (fromCity.chapter === toCity.chapter) return 160;
-      if (span > 32) return 760;
-      if (span > 22) return 480;
-      return 260;
+      const distance = routeDistanceScore(fromCity, toCity);
+      if (fromCity.country === toCity.country) {
+        return cappedRoundedPrice(55 + distance * 18, 60, 180);
+      }
+      if (fromCity.chapter === toCity.chapter) {
+        return cappedRoundedPrice(95 + distance * 24, 120, 320);
+      }
+      return cappedRoundedPrice(180 + distance * 32, 220, 760);
     }
 
     function currentTravelTicket() {
@@ -18533,6 +18546,7 @@
       const chapter = journeyChapters().find(item => item.cities.some(chapterCity => chapterCity.id === city.id));
       const chapterRewardClaimed = chapter ? isChapterRewardClaimed(chapter) : false;
       const chapterRewardReady = Boolean(chapter?.completed && !chapterRewardClaimed);
+      const travelTicketHint = "游览3个主线景点后可购买交通票前往下一站";
       root.className = "current-city-card";
       root.innerHTML = `
         <div class="journey-head">
@@ -18564,6 +18578,7 @@
               <button class="${isOwned(cityCard) ? "secondary" : "primary"}" data-action="buy">${rewardPriceLabel(cityCard)}</button>
             </div>
           ` : ""}
+          ${visits.length ? `<div class="city-task-section">主线景点</div>` : ""}
           ${visits.map(item => {
             const owned = isOwned(item);
             const unlocked = isUnlocked(item);
@@ -18600,7 +18615,7 @@
               <div class="city-task-icon">${ticket.type.includes("机票") ? "AIR" : "RAIL"}</div>
               <div class="city-task-copy">
                 <strong>${city.name} → ${ticket.to.name}</strong>
-                <span>${ticketOwned ? "已购买车票，可以和小猪一起前往下一站。" : ticketReady ? `${ticket.type} · ${ticket.price} 金币。购买后小猪护照会盖下出发章。` : isMainCurrentCity ? `还差 ${Math.max(0, requiredProgress - progress)} 个游览章开放交通票。` : `交通票只在当前主线城市开放购买。`}</span>
+                <span>${ticketOwned ? "已购买车票，可以和小猪一起前往下一站。" : travelTicketHint}</span>
               </div>
               <button class="${ticketReady ? "primary" : "secondary"}" data-action="travel" ${ticketReady ? "" : "disabled"}>${ticketOwned ? "出发" : ticketReady ? `${ticket.price} 金币出发` : "未开放"}</button>
             </div>
@@ -19736,6 +19751,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: tune first chapter sightseeing prices v117 -->
+  <!-- deploy: distance-based travel ticket prices v118 -->
 </body>
 </html>
