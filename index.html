@@ -4717,6 +4717,11 @@
       return firstChapterSightDescriptions[`${city.id}|${visit}`] || `${visit} 是 ${city.name} 很值得停留的一站，适合用一枚游览章认真记下来。`;
     }
 
+    function routeSightDescription(city, visit) {
+      if (city.chapter === "德国漫游") return firstChapterSightDescription(city, visit);
+      return `${visit} 是 ${city.name} 的代表性停靠点，适合在抵达这座城市后慢慢认识当地风景和故事。`;
+    }
+
     function firstChapterSightPrice(city, visit) {
       return firstChapterSightPrices[`${city.id}|${visit}`] || 60;
     }
@@ -16515,7 +16520,7 @@
         category: "sight",
         name: `${city.name} · ${visit}`,
         price: isFirstChapterCity ? firstChapterSightPrice(city, visit) : 60 + visitIndex * 25 + Math.min(120, index * 2),
-        desc: isFirstChapterCity ? firstChapterSightDescription(city, visit) : `完成一段真实学习或计划后，给小猪护照盖下 ${city.name} 的「${visit}」章。`,
+        desc: routeSightDescription(city, visit),
         icon: visitIndex === 0 ? "VIEW" : visitIndex === 1 ? "MUSE" : "WISH",
         color: visitIndex === 0 ? "#e9fbf8" : visitIndex === 1 ? "#f0f7ff" : "#fff2e8",
         region: city.name,
@@ -16531,7 +16536,7 @@
         border: visitIndex === 0 ? "green" : visitIndex === 1 ? "blue" : "rose",
         art: city.id === "shanghai" ? "shanghai" : "tuebingen",
         ...journeyCardArt(city),
-        cardLine: isFirstChapterCity ? firstChapterSightDescription(city, visit) : `${city.name}游览章：${visit}。`
+        cardLine: routeSightDescription(city, visit)
       }));
       return [cityItem, ...visitItems];
     });
@@ -16598,7 +16603,7 @@
         icon: "CAF",
         color: "#fff2e8",
         border: "rose",
-        desc: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "coffee", "喝一杯咖啡") : `支线愿望：完成一段真实学习或计划后，在 ${city.name} 给自己留一杯咖啡。`,
+        desc: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "coffee", "喝一杯咖啡") : `在${city.name}找一处舒服的街角或河畔，喝一杯咖啡休息一下吧。`,
         cardLine: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "coffee", "喝一杯咖啡") : `${city.name}支线：喝一杯咖啡，给这座城市留一点慢下来的时间。`
       },
       {
@@ -16609,7 +16614,7 @@
         icon: "LIB",
         color: "#f0f7ff",
         border: "blue",
-        desc: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "library", "图书馆小坐") : `支线愿望：完成一段真实学习或计划后，在 ${city.name} 的图书馆小坐片刻。`,
+        desc: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "library", "图书馆小坐") : `在${city.name}的图书馆、书店或安静角落坐一会儿，把旅行节奏放慢。`,
         cardLine: city => city.chapter === "德国漫游" ? firstChapterSideDescription(city, "library", "图书馆小坐") : `${city.name}支线：在图书馆或安静角落坐一会儿，慢慢收尾。`
       }
     ];
@@ -16621,7 +16626,7 @@
           category: "wish",
           name: `${city.name} · ${label}`,
           price: 79 + index * 10,
-          desc: `支线愿望：完成一段真实学习或计划后，给小猪护照盖下 ${city.name} 的「${label}」章。`,
+          desc: `${label} 是 ${city.name} 的支线景点，适合留给想多看一眼、慢慢补完城市印象的时候。`,
           icon: index === 0 ? "OPT" : "WISH",
           color: index % 2 === 0 ? "#fff2e8" : "#f0f7ff",
           region: city.name,
@@ -16686,17 +16691,27 @@
       cardLine: "老城溪渠、红瓦屋顶和大教堂尖塔。"
     });
     Object.assign(shopItems.find(item => item.id === "freiburg-visit-1") || {}, {
-      desc: "完成一段真实学习或计划后，给小猪护照盖下弗赖堡的「弗赖堡大教堂」章。",
-      cardLine: "弗赖堡游览章：大教堂广场、尖塔和花市。"
+      desc: firstChapterSightDescriptions["freiburg|弗赖堡大教堂"],
+      cardLine: firstChapterSightDescriptions["freiburg|弗赖堡大教堂"]
     });
     Object.assign(shopItems.find(item => item.id === "freiburg-visit-2") || {}, {
-      desc: "完成一段真实学习或计划后，给小猪护照盖下弗赖堡的「小溪水道」章。",
-      cardLine: "弗赖堡游览章：老城石路边流过的 Bächle 小水渠。"
+      desc: firstChapterSightDescriptions["freiburg|小溪水道"],
+      cardLine: firstChapterSightDescriptions["freiburg|小溪水道"]
     });
     Object.assign(shopItems.find(item => item.id === "freiburg-visit-3") || {}, {
-      desc: "完成一段真实学习或计划后，给小猪护照盖下弗赖堡的「黑森林入口」章。",
-      cardLine: "弗赖堡游览章：从城边走向黑森林的绿色山路。"
+      desc: firstChapterSightDescriptions["freiburg|黑森林入口"],
+      cardLine: firstChapterSightDescriptions["freiburg|黑森林入口"]
     });
+
+    journeyCities
+      .filter(city => city.chapter === "德国漫游")
+      .forEach(city => {
+        city.visits.forEach((visit, index) => {
+          const item = shopItems.find(reward => reward.id === `${city.id}-visit-${index + 1}`);
+          const description = firstChapterSightDescription(city, visit);
+          if (item) Object.assign(item, { desc: description, cardLine: description });
+        });
+      });
 
     let activeCategory = "city";
     let activeStampCategory = "city";
@@ -19762,6 +19777,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: simplify card preview tags v119 -->
+  <!-- deploy: sync first chapter sight descriptions v120 -->
 </body>
 </html>
