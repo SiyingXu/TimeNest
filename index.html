@@ -4177,6 +4177,42 @@
     }
 
     @media (max-width: 620px) {
+      .schedule-form input[type="time"] {
+        min-width: 0;
+        width: 100%;
+        height: 47px;
+        min-height: 47px;
+        padding: 0 12px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 800;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .passport-purchase-card {
+        min-height: 0;
+        height: auto;
+        max-height: none;
+        justify-items: center;
+        padding: 14px;
+      }
+
+      .passport-purchase-image {
+        width: min(74vw, 320px);
+      }
+
+      .passport-purchase-card .passport-purchase-buy {
+        width: min(74vw, 320px);
+      }
+
+      .pet-room {
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.06)),
+          url("assets/visual/generated/pet-room-user-pink-v2.png") center bottom / cover no-repeat,
+          linear-gradient(180deg, #fff2ed, #efcaa4);
+      }
+
       .weekly-overview {
         grid-template-columns: 1fr;
       }
