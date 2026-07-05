@@ -1,75 +1,79 @@
-const CACHE_NAME = "timenest-pwa-v137";
+const CACHE_VERSION = "v138";
+const CORE_CACHE = `timenest-core-${CACHE_VERSION}`;
+const IMAGE_CACHE = `timenest-images-${CACHE_VERSION}`;
+const DATA_CACHE = `timenest-data-${CACHE_VERSION}`;
 
-const APP_SHELL = [
+const CORE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./assets-manifest.js",
   "./assets/app-icon-pig-192.png",
   "./assets/app-icon-pig-512.png",
   "./assets/visual/card-pig-passport.svg",
   "./assets/visual/generated/world-map-handdrawn.png",
-  "./assets/visual/generated/map-china-shanghai-handdrawn.png",
   "./assets/visual/generated/map-germany-route-handdrawn.png",
   "./assets/visual/generated/map-germany-tuebingen-handdrawn.png",
-  "./assets/visual/generated/map-shanghai-city-handdrawn.png",
   "./assets/visual/generated/map-tuebingen-city-handdrawn.png",
-  "./assets/visual/generated/map-freiburg-city-handdrawn.png",
-  "./assets/visual/generated/map-stuttgart-city-handdrawn.png",
-  "./assets/visual/generated/map-heidelberg-city-handdrawn.png",
-  "./assets/visual/generated/map-frankfurt-city-handdrawn.png",
-  "./assets/visual/generated/map-cologne-city-handdrawn.png",
-  "./assets/visual/generated/map-aachen-city-handdrawn.png",
-  "./assets/visual/generated/map-bremen-city-handdrawn.png",
-  "./assets/visual/generated/map-hamburg-city-handdrawn.png",
-  "./assets/visual/generated/map-lubeck-city-handdrawn.png",
-  "./assets/visual/generated/map-berlin-city-handdrawn.png",
-  "./assets/visual/generated/map-dresden-city-handdrawn.png",
-  "./assets/visual/generated/map-leipzig-city-handdrawn.png",
-  "./assets/visual/generated/map-nuremberg-city-handdrawn.png",
-  "./assets/visual/generated/map-rothenburg-city-handdrawn.png",
-  "./assets/visual/generated/map-ulm-city-handdrawn.png",
-  "./assets/visual/generated/map-munich-city-handdrawn.png",
-  "./assets/visual/generated/map-fussen-city-handdrawn.png",
-  "./assets/visual/generated/pet-room-user-pink-v2.png",
-  "./assets/visual/generated/pet-stamp-germany-sprite.png",
   "./assets/visual/generated/card-germany-cities-sprite.png",
   "./assets/visual/generated/card-tuebingen-rewards-sprite.png",
-  "./assets/visual/generated/card-freiburg-rewards-sprite.png",
-  "./assets/visual/generated/card-pig-passport-handdrawn.png",
-  "./assets/visual/generated/card-stuttgart-rewards-sprite.png",
-  "./assets/visual/generated/card-heidelberg-rewards-sprite.png",
-  "./assets/visual/generated/card-frankfurt-rewards-sprite.png",
-  "./assets/visual/generated/card-cologne-rewards-sprite.png",
-  "./assets/visual/generated/card-aachen-rewards-sprite.png",
-  "./assets/visual/generated/card-bremen-rewards-sprite.png",
-  "./assets/visual/generated/card-hamburg-rewards-sprite.png",
-  "./assets/visual/generated/card-lubeck-rewards-sprite.png",
-  "./assets/visual/generated/card-berlin-rewards-sprite.png",
-  "./assets/visual/generated/card-dresden-rewards-sprite.png",
-  "./assets/visual/generated/card-leipzig-rewards-sprite.png",
-  "./assets/visual/generated/card-nuremberg-rewards-sprite.png",
-  "./assets/visual/generated/card-rothenburg-rewards-sprite.png",
-  "./assets/visual/generated/card-ulm-rewards-sprite.png",
-  "./assets/visual/generated/card-munich-rewards-sprite.png",
-  "./assets/visual/generated/card-fussen-rewards-sprite.png",
-  "./assets/visual/generated/card-shanghai-handdrawn.png",
-  "./assets/visual/generated/card-tuebingen-handdrawn.png"
+  "./assets/visual/generated/card-tuebingen-handdrawn.png",
+  "./assets/visual/generated/card-pig-passport-handdrawn.png"
 ];
+
+const IMAGE_EXTENSIONS = /\.(?:avif|webp|png|jpg|jpeg|gif|svg)$/i;
+const DATA_EXTENSIONS = /\.(?:json|js|css|webmanifest)$/i;
+const MAX_IMAGE_ENTRIES = 90;
+const MAX_DATA_ENTRIES = 35;
+
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length <= maxEntries) return;
+  await Promise.all(keys.slice(0, keys.length - maxEntries).map(key => cache.delete(key)));
+}
+
+async function cacheFirst(request, cacheName, maxEntries) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response && response.ok) {
+    const copy = response.clone();
+    caches.open(cacheName)
+      .then(cache => cache.put(request, copy))
+      .then(() => trimCache(cacheName, maxEntries))
+      .catch(() => {});
+  }
+  return response;
+}
+
+async function networkFirstHtml(request) {
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      const cache = await caches.open(CORE_CACHE);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await caches.match(request);
+    return cached || caches.match("./index.html");
+  }
+}
 
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+    caches.open(CORE_CACHE)
+      .then(cache => cache.addAll(CORE_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", event => {
+  const allowed = new Set([CORE_CACHE, IMAGE_CACHE, DATA_CACHE]);
   event.waitUntil(
     caches.keys()
-      .then(names => Promise.all(
-        names.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
-      ))
+      .then(names => Promise.all(names.filter(name => !allowed.has(name)).map(name => caches.delete(name))))
       .then(() => self.clients.claim())
   );
 });
@@ -77,30 +81,25 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
+  const url = new URL(event.request.url);
+  const sameOrigin = url.origin === self.location.origin;
   const wantsHtml = event.request.mode === "navigate"
     || event.request.headers.get("accept")?.includes("text/html");
 
   if (wantsHtml) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then(cached => cached || caches.match("./index.html")))
-    );
+    event.respondWith(networkFirstHtml(event.request));
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        return response;
-      });
-    })
-  );
+  if (sameOrigin && IMAGE_EXTENSIONS.test(url.pathname)) {
+    event.respondWith(cacheFirst(event.request, IMAGE_CACHE, MAX_IMAGE_ENTRIES));
+    return;
+  }
+
+  if (sameOrigin && DATA_EXTENSIONS.test(url.pathname)) {
+    event.respondWith(cacheFirst(event.request, DATA_CACHE, MAX_DATA_ENTRIES));
+    return;
+  }
+
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });

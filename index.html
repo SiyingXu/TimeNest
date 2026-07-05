@@ -841,6 +841,72 @@
       font-weight: 900;
     }
 
+    .sync-status {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+      border: 1px solid rgba(31,41,55,.12);
+      border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      color: var(--muted);
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .sync-status.active {
+      display: inline-flex;
+    }
+
+    .world-map.map-route-moving {
+      animation: mapRouteMove 640ms cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .world-map.map-city-complete {
+      animation: cityCompletePulse 720ms ease both;
+    }
+
+    .world-map.map-chapter-unlocking {
+      animation: chapterUnlockColor 980ms ease both;
+    }
+
+    .world-map.map-chapter-unlocking .chapter-map-image {
+      animation: chapterImageUnlock 980ms ease both;
+    }
+
+    @keyframes mapRouteMove {
+      0% { transform: scale(.985) translateY(8px); filter: saturate(.85); }
+      55% { transform: scale(1.018) translateY(-2px); filter: saturate(1.14); }
+      100% { transform: scale(1) translateY(0); filter: saturate(1); }
+    }
+
+    @keyframes cityCompletePulse {
+      0% { filter: saturate(.9) brightness(.98); }
+      46% { filter: saturate(1.22) brightness(1.05); }
+      100% { filter: saturate(1) brightness(1); }
+    }
+
+    @keyframes chapterUnlockColor {
+      0% { filter: grayscale(1) saturate(.55) brightness(.96); }
+      64% { filter: grayscale(.18) saturate(1.2) brightness(1.05); }
+      100% { filter: grayscale(0) saturate(1) brightness(1); }
+    }
+
+    @keyframes chapterImageUnlock {
+      0% { opacity: .42; filter: grayscale(1); }
+      100% { opacity: 1; filter: grayscale(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .world-map.map-route-moving,
+      .world-map.map-city-complete,
+      .world-map.map-chapter-unlocking,
+      .world-map.map-chapter-unlocking .chapter-map-image {
+        animation: none;
+      }
+    }
+
     .map-trail {
       position: absolute;
       left: 10px;
@@ -4680,6 +4746,7 @@
               <button type="button" id="testResetState">重启测试</button>
               <button type="button" id="testInfiniteCoins">无穷金币</button>
             </div>
+            <div class="sync-status" id="syncStatus" aria-live="polite">Local</div>
           </div>
           <div class="world-map" id="worldMap" aria-label="可点击旅行地图"></div>
           <div class="journey-panel" id="journeyPanel"></div>
@@ -4882,13 +4949,22 @@
   <div class="card-modal" id="cardModal" aria-hidden="true"></div>
   <div class="toast" id="toast"></div>
 
+  <script src="assets-manifest.js"></script>
   <script>
     function localDateKey(date = new Date()) {
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     }
 
     const todayKey = localDateKey();
-    const ENABLE_TEST_TOOLS = true;
+    const devParams = new URLSearchParams(window.location.search);
+    const devMode = devParams.get("dev") === "1" || localStorage.getItem("TimeNestDevMode") === "true";
+    const ENABLE_TEST_TOOLS = devMode;
+    const syncConfig = {
+      url: localStorage.getItem("TimeNestSupabaseUrl") || window.TIMENEST_SUPABASE_URL || "",
+      anonKey: localStorage.getItem("TimeNestSupabaseAnonKey") || window.TIMENEST_SUPABASE_ANON_KEY || "",
+      accessToken: localStorage.getItem("TimeNestSupabaseAccessToken") || "",
+      userId: localStorage.getItem("TimeNestUserId") || ""
+    };
     const defaultState = {
       coins: 300,
       focusMinutes: 0,
@@ -4906,6 +4982,7 @@
       timeLogs: [],
       tasks: [],
       photoArchive: [],
+      sync: { updatedAt: new Date().toISOString(), mutations: [] },
       history: [{ text: "图宾根旅行基金", amount: 300, time: "今天", date: todayKey }]
     };
 
@@ -17181,6 +17258,11 @@
       parsed.photoArchive = Array.isArray(parsed.photoArchive)
         ? parsed.photoArchive.map(normalizePhotoRecord).filter(Boolean)
         : [];
+      parsed.sync = parsed.sync && typeof parsed.sync === "object" && !Array.isArray(parsed.sync)
+        ? parsed.sync
+        : { updatedAt: new Date().toISOString(), mutations: [] };
+      parsed.sync.updatedAt ||= new Date().toISOString();
+      parsed.sync.mutations = Array.isArray(parsed.sync.mutations) ? parsed.sync.mutations.slice(-200) : [];
       parsed.plans = parsed.plans.map(plan => ({ ...plan, taskId: plan.taskId || null, category: plan.category || "study" }));
       parsed.timeLogs = parsed.timeLogs.map(log => ({
         ...log,
@@ -17201,7 +17283,163 @@
       return parsed;
     }
 
-    function saveState() {
+    function publicStateSnapshot(source = state) {
+      const snapshot = structuredClone(source);
+      delete snapshot.devMode;
+      snapshot.sync = {
+        updatedAt: snapshot.sync?.updatedAt || new Date().toISOString(),
+        mutations: []
+      };
+      return snapshot;
+    }
+
+    const syncState = {
+      pendingTimer: null,
+      status: syncConfig.userId ? "queued" : "local",
+      configured() {
+        return Boolean(syncConfig.url && syncConfig.anonKey && syncConfig.userId);
+      },
+      headers() {
+        const token = syncConfig.accessToken || syncConfig.anonKey;
+        return {
+          apikey: syncConfig.anonKey,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates"
+        };
+      },
+      setStatus(status) {
+        this.status = status;
+        renderSyncStatus();
+      },
+      async pullRemoteState(userId = syncConfig.userId) {
+        if (!this.configured() || !userId) {
+          this.setStatus("local");
+          return null;
+        }
+        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/user_state?user_id=eq.${encodeURIComponent(userId)}&select=state,updated_at&limit=1`;
+        const response = await fetch(endpoint, { headers: this.headers() });
+        if (!response.ok) throw new Error(`Pull failed: ${response.status}`);
+        const rows = await response.json();
+        const remote = rows[0]?.state || null;
+        if (remote) {
+          state = mergeState(state, remote);
+          localStorage.setItem("TimeNestState", JSON.stringify(state));
+          render();
+        }
+        this.setStatus(remote ? "synced" : "empty");
+        return remote;
+      },
+      async pushLocalState(userId = syncConfig.userId) {
+        if (!this.configured() || !userId) {
+          this.setStatus("local");
+          return false;
+        }
+        const snapshot = publicStateSnapshot();
+        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/user_state?on_conflict=user_id`;
+        const payload = {
+          user_id: userId,
+          state: snapshot,
+          updated_at: snapshot.sync.updatedAt
+        };
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error(`Push failed: ${response.status}`);
+        await this.flushMutations(userId);
+        this.setStatus("synced");
+        return true;
+      },
+      queueMutation(operation, options = {}) {
+        if (options.skipSync || operation?.devOnly) return;
+        state.sync ??= { updatedAt: new Date().toISOString(), mutations: [] };
+        state.sync.mutations = Array.isArray(state.sync.mutations) ? state.sync.mutations : [];
+        state.sync.mutations.push({
+          id: makeId(),
+          ts: Date.now(),
+          type: operation?.type || "state-save",
+          payload: operation?.payload || null
+        });
+        state.sync.mutations = state.sync.mutations.slice(-200);
+        this.setStatus(this.configured() ? "queued" : "local");
+        clearTimeout(this.pendingTimer);
+        this.pendingTimer = setTimeout(() => {
+          this.pushLocalState().catch(() => this.setStatus("offline"));
+        }, 1200);
+      },
+      async flushMutations(userId = syncConfig.userId) {
+        const mutations = state.sync?.mutations || [];
+        if (!mutations.length || !this.configured() || !userId) return;
+        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/sync_mutations?on_conflict=id`;
+        const rows = mutations.map(item => ({
+          id: item.id,
+          user_id: userId,
+          type: item.type,
+          payload: item.payload,
+          created_at: new Date(item.ts || Date.now()).toISOString()
+        }));
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify(rows)
+        });
+        if (!response.ok) throw new Error(`Mutation flush failed: ${response.status}`);
+        state.sync.mutations = [];
+        localStorage.setItem("TimeNestState", JSON.stringify(state));
+      }
+    };
+
+    function mergeUnique(left = [], right = []) {
+      return [...new Set([...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])])];
+    }
+
+    function mergeById(left = [], right = []) {
+      const rows = new Map();
+      [...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])].forEach(item => {
+        if (!item || typeof item !== "object") return;
+        const id = item.id || `${item.kind || "row"}-${item.ts || item.date || Math.random()}`;
+        const existing = rows.get(id);
+        if (!existing || Date.parse(item.updatedAt || item.createdAt || item.ts || 0) >= Date.parse(existing.updatedAt || existing.createdAt || existing.ts || 0)) {
+          rows.set(id, item);
+        }
+      });
+      return [...rows.values()];
+    }
+
+    function mergeState(local, remote) {
+      const localUpdated = Date.parse(local?.sync?.updatedAt || 0);
+      const remoteUpdated = Date.parse(remote?.sync?.updatedAt || 0);
+      const base = remoteUpdated > localUpdated ? structuredClone(remote) : structuredClone(local);
+      base.ownedRewards = mergeUnique(local?.ownedRewards, remote?.ownedRewards);
+      base.wishlist = mergeUnique(local?.wishlist, remote?.wishlist);
+      base.chapterRewards = mergeUnique(local?.chapterRewards, remote?.chapterRewards);
+      base.records = mergeById(local?.records, remote?.records).slice(-500);
+      base.timeLogs = mergeById(local?.timeLogs, remote?.timeLogs);
+      base.tasks = mergeById(local?.tasks, remote?.tasks);
+      base.plans = mergeById(local?.plans, remote?.plans);
+      base.photoArchive = mergeById(local?.photoArchive, remote?.photoArchive);
+      base.travel ??= {};
+      base.travel.arrivedCities = mergeUnique(local?.travel?.arrivedCities, remote?.travel?.arrivedCities);
+      base.travel.tickets = mergeUnique(local?.travel?.tickets, remote?.travel?.tickets);
+      base.travel.cityUnlocks = { ...(local?.travel?.cityUnlocks || {}), ...(remote?.travel?.cityUnlocks || {}) };
+      base.sync = {
+        updatedAt: new Date(Math.max(localUpdated || 0, remoteUpdated || 0, Date.now())).toISOString(),
+        mutations: mergeUnique(local?.sync?.mutations, remote?.sync?.mutations).slice(-200)
+      };
+      return base;
+    }
+
+    window.syncState = syncState;
+    window.mergeState = mergeState;
+
+    function saveState(options = {}) {
+      state.sync ??= { updatedAt: new Date().toISOString(), mutations: [] };
+      state.sync.updatedAt = new Date().toISOString();
+      if (!options.skipSync) {
+        syncState.queueMutation({ type: options.type || "state-save", payload: options.payload || null }, options);
+      }
       localStorage.setItem("TimeNestState", JSON.stringify(state));
     }
 
@@ -17232,7 +17470,7 @@
       photoSearchTerm = "";
       photoStatusFilter = "all";
       photoMonthFilter = "all";
-      saveState();
+      saveState({ skipSync: true, type: "dev-reset-state" });
       render();
       showToast("已重启到测试初始状态。");
     }
@@ -17242,9 +17480,68 @@
       state.coins = 999999;
       state.history.unshift({ text: "测试金币", amount: 999999, date: todayKey, time: "测试" });
       state.history = state.history.slice(0, 8);
-      saveState();
+      saveState({ skipSync: true, type: "dev-grant-coins" });
       render();
       showToast("测试金币已开启。");
+    }
+
+    function markCityArrivedForTesting(cityId) {
+      const city = journeyCityById(cityId);
+      if (!city) return;
+      ensureTravelState();
+      if (!state.travel.arrivedCities.includes(city.id)) state.travel.arrivedCities.push(city.id);
+      state.travel.cityUnlocks[city.id] ||= todayKey;
+      const cardId = cityCardId(city.id);
+      if (!state.ownedRewards.includes(cardId)) state.ownedRewards.push(cardId);
+    }
+
+    function markPreviousCitiesForTesting(cityId) {
+      const targetIndex = journeyCityIndex(cityId);
+      if (targetIndex < 0) return;
+      journeyCities.slice(0, targetIndex).forEach(city => unlockCityRewardsForTesting(city.id));
+      journeyCities.slice(0, targetIndex).forEach((city, index) => {
+        const nextCity = journeyCities[index + 1];
+        const ticket = travelTicketFor(city, nextCity);
+        if (!ticket) return;
+        if (!state.travel.tickets.includes(ticket.id)) state.travel.tickets.push(ticket.id);
+        if (!state.ownedRewards.includes(ticket.id)) state.ownedRewards.push(ticket.id);
+      });
+      markCityArrivedForTesting(cityId);
+    }
+
+    function jumpToCity(cityId) {
+      if (!ENABLE_TEST_TOOLS) return;
+      const city = journeyCityById(cityId);
+      if (!city) return;
+      markPreviousCitiesForTesting(city.id);
+      state.travel.currentCityId = city.id;
+      exploringCityId = city.id;
+      mapMode = cityVisualMapMode(city.id);
+      selectedRewardId = cityCardId(city.id);
+      activeRewardSection = "city";
+      saveState({ skipSync: true, type: "dev-jump-city", payload: { cityId: city.id } });
+      render();
+      playMapAnimation("map-route-moving");
+      showToast(`Dev: jumped to ${city.name}.`);
+    }
+
+    function confirmJumpToCityForTesting(city) {
+      if (!ENABLE_TEST_TOOLS || !city) return false;
+      const targetIndex = journeyCityIndex(city.id);
+      const finishedCount = Math.max(0, targetIndex);
+      const message = `测试者模式：是否跳跃至「${city.name}」？\n\n确认后会自动标记该城市之前 ${finishedCount} 座城市的所有项目和交通票均已打卡。`;
+      if (!window.confirm(message)) return true;
+      jumpToCity(city.id);
+      return true;
+    }
+
+    function unlockCityRewardsForTesting(cityId) {
+      markCityArrivedForTesting(cityId);
+      shopItems
+        .filter(item => item.cityId === cityId && ["sight", "wish"].includes(item.category))
+        .forEach(item => {
+          if (!state.ownedRewards.includes(item.id)) state.ownedRewards.push(item.id);
+        });
     }
 
     function addCoins(amount, label, record = {}) {
@@ -17293,14 +17590,31 @@
       renderPet();
       renderPhotoArchive();
       renderTestTools();
+      renderSyncStatus();
     }
 
     function renderTestTools() {
       const root = document.querySelector("#testTools");
       if (!root) return;
       root.classList.toggle("active", ENABLE_TEST_TOOLS);
+      if (!ENABLE_TEST_TOOLS) return;
       root.querySelector("#testResetState").onclick = resetForTesting;
       root.querySelector("#testInfiniteCoins").onclick = grantTestingCoins;
+    }
+
+    function renderSyncStatus() {
+      const root = document.querySelector("#syncStatus");
+      if (!root) return;
+      const active = Boolean(syncConfig.userId || syncState.status !== "local");
+      root.classList.toggle("active", active);
+      const labels = {
+        local: "Local only",
+        queued: "Sync queued",
+        synced: "Synced",
+        offline: "Offline queue",
+        empty: "Cloud ready"
+      };
+      root.textContent = labels[syncState.status] || syncState.status;
     }
 
     function normalizePhotoStatus(status) {
@@ -18561,6 +18875,7 @@
 
     function openJourneyCity(city) {
       if (!city) return;
+      if (confirmJumpToCityForTesting(city)) return;
       const card = journeyCityCard(city.id);
       if (!card) return;
       exploringCityId = city.id;
@@ -19567,6 +19882,7 @@
         return;
       }
       if (!ticketOwned && !window.confirm(`确认花费 ${ticket.price} 金币购买${ticket.type}，从「${ticket.from.name}」前往「${ticket.to.name}」吗？`)) return;
+      const chapterChanged = ticket.from.chapter !== ticket.to.chapter;
       if (!ticketOwned) spendCoins(ticket.price, `购买「${ticket.from.name}→${ticket.to.name}」${ticket.type}`);
       if (!state.travel.tickets.includes(ticket.id)) state.travel.tickets.push(ticket.id);
       if (!state.ownedRewards.includes(ticket.id)) state.ownedRewards.push(ticket.id);
@@ -19581,6 +19897,7 @@
       saveState();
       render();
       openArrivalModal(ticket, nextCard);
+      playMapAnimation(chapterChanged ? "map-chapter-unlocking" : "map-route-moving");
       showToast(`已抵达 ${ticket.to.name}，新的城市章开放了。`);
     }
 
@@ -20369,6 +20686,8 @@
       if (item.cityId && !item.sideQuest && isCityCompleted(item.cityId)) {
         const city = journeyCityById(item.cityId);
         const next = city ? journeyCities[journeyCities.findIndex(routeCity => routeCity.id === city.id) + 1] : null;
+        const chapter = journeyChapters().find(chapterItem => chapterItem.cities.some(chapterCity => chapterCity.id === item.cityId));
+        playMapAnimation(chapter?.completed ? "map-chapter-unlocking" : "map-city-complete");
         showToast(next ? `${city.name} 3 章完成，前往 ${next.name} 的交通票开放了。` : `${city.name} 3 章完成，环球路线收官！`);
       } else {
         showToast(`小猪盖下 ${item.stamp || item.icon} 章：${item.name}`);
@@ -20460,6 +20779,15 @@
       const hadProgress = currentTimerElapsed() > 0 || (timerMode === "countdown" && timer.left < timer.total);
       resetTimer();
       showToast(hadProgress ? "已放弃本次计时，未记录时间。" : "本次计时已重置。");
+    }
+
+    function playMapAnimation(className) {
+      const map = document.querySelector("#worldMap");
+      if (!map || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+      map.classList.remove(className);
+      void map.offsetWidth;
+      map.classList.add(className);
+      window.setTimeout(() => map.classList.remove(className), 1100);
     }
 
     function showToast(message) {
@@ -20669,6 +20997,16 @@
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
       });
+    }
+
+    window.addEventListener("online", () => {
+      syncState.pushLocalState().catch(() => syncState.setStatus("offline"));
+    });
+
+    if (syncState.configured()) {
+      syncState.pullRemoteState()
+        .then(() => syncState.pushLocalState())
+        .catch(() => syncState.setStatus("offline"));
     }
 
     render();
