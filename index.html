@@ -17454,6 +17454,10 @@
       return `${action}失败：${status}`;
     }
 
+    function isSupabaseSchemaError(error) {
+      return String(error?.message || error || "").includes("Supabase 表");
+    }
+
     function authErrorMessage(path, data, status) {
       const raw = String(data?.msg || data?.message || data?.error_description || data?.error || "").trim();
       const lowered = raw.toLowerCase();
@@ -17552,7 +17556,7 @@
           return true;
         } catch (error) {
           console.warn(error);
-          this.setStatus("offline");
+          this.setStatus(isSupabaseSchemaError(error) ? "setup" : "offline");
           return false;
         }
       },
@@ -17878,7 +17882,8 @@
         queued: "Sync queued",
         synced: "Synced",
         offline: "Offline queue",
-        empty: "Cloud ready"
+        empty: "Cloud ready",
+        setup: "Cloud setup needed"
       };
       root.textContent = labels[syncState.status] || syncState.status;
     }
@@ -17903,6 +17908,22 @@
       if (note) note.textContent = message || "";
     }
 
+    function signedInSyncNote() {
+      if (syncState.status === "synced") return "当前进度已同步。";
+      if (syncState.status === "setup") return "需要先在 Supabase SQL Editor 运行 supabase-schema.sql，之后云同步会自动恢复。";
+      return "云同步队列会在网络和数据库就绪后自动重试。";
+    }
+
+    function authSuccessMessage(kind, synced) {
+      if (synced || syncState.status === "synced") {
+        return kind === "register" ? "账号已创建，当前进度已同步。" : "已登录并同步进度。";
+      }
+      if (syncState.status === "setup") {
+        return kind === "register" ? "账号已创建并登录，但云端表还未配置。" : "已登录，但云端表还未配置。";
+      }
+      return kind === "register" ? "账号已创建并登录，云同步会稍后重试。" : "已登录，云同步会稍后重试。";
+    }
+
     function openAuthModal() {
       const modal = document.querySelector("#authModal");
       const configured = Boolean(syncConfig.url && syncConfig.anonKey);
@@ -17915,7 +17936,7 @@
               <h3>账号同步</h3>
               <p>当前账号：${syncConfig.username}${appScope === "dev" ? " · dev" : ""}</p>
             </div>
-            <div class="auth-note" id="authNote">${syncState.status === "synced" ? "当前进度已同步。" : "云同步队列会在网络和数据库就绪后自动重试。"}</div>
+            <div class="auth-note" id="authNote">${signedInSyncNote()}</div>
             <div class="auth-actions">
               <button class="secondary" id="authLogout" type="button">退出</button>
               <button class="secondary" id="authClose" type="button">关闭</button>
@@ -17963,7 +17984,7 @@
         try {
           const result = await signInWithUsername(username, password);
           closeAuthModal();
-          showToast(syncState.status === "synced" || result?.synced ? "已登录并同步进度。" : "已登录，云同步会稍后重试。");
+          showToast(authSuccessMessage("login", result?.synced));
         } catch (error) {
           setAuthNote(error.message || "登录失败。");
         }
@@ -17975,7 +17996,7 @@
         try {
           const result = await registerWithUsername(username, password);
           closeAuthModal();
-          showToast(result?.synced ? "账号已创建，当前进度已同步。" : "账号已创建并登录，云同步会稍后重试。");
+          showToast(authSuccessMessage("register", result?.synced));
         } catch (error) {
           setAuthNote(error.message || "注册失败。");
         }
