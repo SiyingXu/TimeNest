@@ -3957,6 +3957,22 @@
       background: #fff;
     }
 
+    .photo-list-panel {
+      min-height: 0;
+    }
+
+    .photo-list-panel.is-scrollable {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .photo-list-panel.is-scrollable .photo-table-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+
     .photo-table {
       width: 100%;
       min-width: 720px;
@@ -17322,6 +17338,7 @@
       form.querySelector('[data-field="journalStatus"]').value = normalizePhotoStatus(values.journalStatus);
       document.querySelector("#savePhotoRecord").textContent = record ? "保存修改" : "新增地点";
       document.querySelector("#cancelPhotoEdit").hidden = !record;
+      syncPhotoPanelHeights();
     }
 
     function readPhotoForm() {
@@ -17398,10 +17415,12 @@
       root.innerHTML = "";
       if (!state.photoArchive.length) {
         root.innerHTML = `<div class="empty">还没有照片整理记录。先新增一个地点吧。</div>`;
+        syncPhotoPanelHeights();
         return;
       }
       if (!visible.length) {
         root.innerHTML = `<div class="empty">当前筛选下没有匹配地点。</div>`;
+        syncPhotoPanelHeights();
         return;
       }
 
@@ -17481,6 +17500,24 @@
       mergePhotoTableColumn(tbody, ".photo-country", record => `${record.month || "-"}|${record.country || "-"}`);
       mergePhotoTableColumn(tbody, ".photo-city", record => `${record.month || "-"}|${record.country || "-"}|${record.city || "未命名地点"}`);
       root.appendChild(table);
+      syncPhotoPanelHeights();
+    }
+
+    function syncPhotoPanelHeights() {
+      const photoView = document.querySelector("#photo-view");
+      const controlPanel = document.querySelector(".photo-control-panel");
+      const listPanel = document.querySelector(".photo-list-panel");
+      if (!photoView || !controlPanel || !listPanel) return;
+      if (!photoView.classList.contains("active") || window.matchMedia("(max-width: 699px)").matches) {
+        listPanel.classList.remove("is-scrollable");
+        listPanel.style.height = "";
+        return;
+      }
+      requestAnimationFrame(() => {
+        const controlHeight = Math.ceil(controlPanel.getBoundingClientRect().height);
+        listPanel.style.height = `${controlHeight}px`;
+        listPanel.classList.add("is-scrollable");
+      });
     }
 
     function mergePhotoTableColumn(tbody, selector, keyForRecord) {
@@ -20464,6 +20501,7 @@
           renderPet();
         }
         if (tab.dataset.view === "rewards-view") requestAnimationFrame(syncTravelPanelHeight);
+        if (tab.dataset.view === "photo-view") requestAnimationFrame(syncPhotoPanelHeights);
         const route = tab.dataset.view.replace("-view", "");
         if (location.hash !== `#${route}`) history.replaceState(null, "", `#${route}`);
       });
@@ -20484,7 +20522,10 @@
     }
 
     window.addEventListener("hashchange", openRouteFromHash);
-    window.addEventListener("resize", () => requestAnimationFrame(syncTravelPanelHeight));
+    window.addEventListener("resize", () => {
+      requestAnimationFrame(syncTravelPanelHeight);
+      requestAnimationFrame(syncPhotoPanelHeights);
+    });
 
     setInterval(renderPlans, 60 * 1000);
 
@@ -20499,6 +20540,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: sort photo records by entry order v134 -->
+  <!-- deploy: keep photo archive table scrollable v135 -->
 </body>
 </html>
