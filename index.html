@@ -4021,6 +4021,15 @@
       height: 28px;
       min-height: 28px;
       margin: 0 1px;
+      display: inline-grid;
+    }
+
+    .photo-table td.photo-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
     }
 
     .photo-year-tabs {
@@ -17399,16 +17408,26 @@
       const table = document.createElement("table");
       table.className = "photo-table";
       table.innerHTML = `
+        <colgroup>
+          <col>
+          <col>
+          <col>
+          <col>
+          <col>
+          <col>
+          <col>
+          <col style="width: 74px">
+        </colgroup>
         <thead>
           <tr>
             <th>月份</th>
             <th>国家</th>
             <th>城市</th>
             <th>备注</th>
-            <th>□</th>
-            <th>□</th>
-            <th>□</th>
-            <th></th>
+            <th>照片</th>
+            <th>视频</th>
+            <th>手账</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -20480,6 +20499,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: refine photo status controls v132 -->
+  <!-- deploy: refine photo table headers v133 -->
 </body>
 </html>
