@@ -97,7 +97,7 @@ TimeNest uses Supabase Auth internally, but the user-facing login is `username +
 Implementation details:
 
 - Username can use Chinese characters, letters, numbers, spaces, hyphens, or underscores, length `2-24`.
-- The app maps a username to a stable internal Auth email hash such as `user-<hash>@users.timenest.app`.
+- The app maps a username to a stable internal Auth email hash such as `user-<hash>@gmail.com`. This is only an internal Supabase Auth identifier; users do not need to own or enter an email address.
 - Passwords are handled by Supabase Auth; the static app never stores password hashes.
 - Local storage is scoped by app:
   - Production: `TimeNest:prod:State:v2`
