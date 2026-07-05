@@ -17447,6 +17447,13 @@
       return `${syncConfig.url.replace(/\/$/, "")}/auth/v1/${path}`;
     }
 
+    function restTableError(action, tableName, status) {
+      if (status === 404) {
+        return `${action}失败：Supabase 表 ${tableName} 不存在或 schema 还未刷新。请在 Supabase SQL Editor 运行 supabase-schema.sql。`;
+      }
+      return `${action}失败：${status}`;
+    }
+
     async function authRequest(path, body, token = null) {
       if (!syncConfig.url || !syncConfig.anonKey) {
         throw new Error("Supabase is not configured.");
@@ -17496,7 +17503,10 @@
       } else {
         await signInWithUsername(normalized, password);
       }
-      await syncState.upsertProfile(normalized);
+      await syncState.upsertProfile(normalized).catch(error => {
+        console.warn(error);
+        syncState.setStatus("offline");
+      });
       await syncState.pushLocalState();
       render();
       return data;
@@ -17534,7 +17544,10 @@
             updated_at: new Date().toISOString()
           })
         });
-        if (!response.ok) throw new Error(`Profile save failed: ${response.status}`);
+        if (!response.ok) {
+          if (response.status === 404) return false;
+          throw new Error(restTableError("保存用户档案", "profiles", response.status));
+        }
         return true;
       },
       async pullRemoteState(userId = syncConfig.userId) {
@@ -17544,7 +17557,7 @@
         }
         const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/user_state?user_id=eq.${encodeURIComponent(userId)}&app_scope=eq.${encodeURIComponent(syncConfig.appScope)}&select=state,updated_at&limit=1`;
         const response = await fetch(endpoint, { headers: this.headers() });
-        if (!response.ok) throw new Error(`Pull failed: ${response.status}`);
+        if (!response.ok) throw new Error(restTableError("读取云端进度", "user_state", response.status));
         const rows = await response.json();
         const remote = rows[0]?.state || null;
         if (remote) {
@@ -17573,7 +17586,7 @@
           headers: this.headers(),
           body: JSON.stringify(payload)
         });
-        if (!response.ok) throw new Error(`Push failed: ${response.status}`);
+        if (!response.ok) throw new Error(restTableError("保存云端进度", "user_state", response.status));
         await this.flushMutations(userId);
         this.setStatus("synced");
         return true;
