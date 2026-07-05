@@ -17264,7 +17264,7 @@
 
     function photoSortValue(record) {
       const year = Number(record.year) || 9999;
-      return [year, photoMonthOrder(record.month), record.country || "", record.city || "", record.createdAt || ""];
+      return [year, photoMonthOrder(record.month), record.createdAt || "", record.id || ""];
     }
 
     function comparePhotoRecords(a, b) {
@@ -20499,6 +20499,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: refine photo table headers v133 -->
+  <!-- deploy: sort photo records by entry order v134 -->
 </body>
 </html>
