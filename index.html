@@ -96,6 +96,25 @@
       border: 1px solid #f0cc77;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .account-button {
+      min-height: 38px;
+      border: 1px solid rgba(227, 107, 127, .35);
+      border-radius: 999px;
+      background: #fff7fb;
+      color: var(--rose-dark);
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
     main {
       overflow: auto;
       padding: 16px 16px 88px;
@@ -1839,6 +1858,56 @@
 
     .card-modal.active .collect-card {
       animation: cardDraw 240ms ease both;
+    }
+
+    .auth-dialog {
+      width: min(92vw, 390px);
+      background: #fffdf8;
+      border: 1px solid rgba(216, 222, 232, .95);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .auth-dialog h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .auth-dialog p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .auth-form input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 0 12px;
+    }
+
+    .auth-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .auth-note {
+      min-height: 18px;
+      color: var(--rose-dark);
+      font-size: 12px;
+      font-weight: 750;
     }
 
     @keyframes cardDraw {
@@ -4639,7 +4708,10 @@
           <h1>TimeNest</h1>
           <p class="subtitle">把完成的事情，换成看得见的小奖励。</p>
         </div>
-        <div class="coin-pill" aria-live="polite"><span id="coins">0</span> 金币</div>
+        <div class="header-actions">
+          <button class="account-button" id="accountButton" type="button">本地</button>
+          <div class="coin-pill" aria-live="polite"><span id="coins">0</span> 金币</div>
+        </div>
       </div>
     </header>
 
@@ -4947,6 +5019,7 @@
     </nav>
   </div>
   <div class="card-modal" id="cardModal" aria-hidden="true"></div>
+  <div class="card-modal" id="authModal" aria-hidden="true"></div>
   <div class="toast" id="toast"></div>
 
   <script src="assets-manifest.js"></script>
@@ -4957,13 +5030,25 @@
 
     const todayKey = localDateKey();
     const devParams = new URLSearchParams(window.location.search);
-    const devMode = devParams.get("dev") === "1" || localStorage.getItem("TimeNestDevMode") === "true";
+    const appScope = location.pathname.includes("/TimeNest-dev") ? "dev" : "prod";
+    const storagePrefix = `TimeNest:${appScope}`;
+    const stateStorageKey = `${storagePrefix}:State`;
+    const devModeKey = "TimeNestDevMode";
+    const devMode = devParams.get("dev") === "1" || localStorage.getItem(devModeKey) === "true";
     const ENABLE_TEST_TOOLS = devMode;
+    function scopedStorageValue(name, fallbackName = null) {
+      return localStorage.getItem(`${storagePrefix}:${name}`)
+        || (fallbackName ? localStorage.getItem(fallbackName) : "")
+        || "";
+    }
     const syncConfig = {
-      url: localStorage.getItem("TimeNestSupabaseUrl") || window.TIMENEST_SUPABASE_URL || "",
-      anonKey: localStorage.getItem("TimeNestSupabaseAnonKey") || window.TIMENEST_SUPABASE_ANON_KEY || "",
-      accessToken: localStorage.getItem("TimeNestSupabaseAccessToken") || "",
-      userId: localStorage.getItem("TimeNestUserId") || ""
+      appScope,
+      url: scopedStorageValue("SupabaseUrl", "TimeNestSupabaseUrl") || window.TIMENEST_SUPABASE_URL || "",
+      anonKey: scopedStorageValue("SupabaseAnonKey", "TimeNestSupabaseAnonKey") || window.TIMENEST_SUPABASE_ANON_KEY || "",
+      accessToken: localStorage.getItem(`${storagePrefix}:SupabaseAccessToken`) || "",
+      refreshToken: localStorage.getItem(`${storagePrefix}:SupabaseRefreshToken`) || "",
+      userId: localStorage.getItem(`${storagePrefix}:UserId`) || "",
+      username: localStorage.getItem(`${storagePrefix}:Username`) || ""
     };
     const defaultState = {
       coins: 300,
@@ -17225,7 +17310,11 @@
     }
 
     function loadState() {
-      const saved = localStorage.getItem("TimeNestState") || localStorage.getItem("timeNestState");
+      let saved = localStorage.getItem(stateStorageKey);
+      if (!saved && appScope === "prod") {
+        saved = localStorage.getItem("TimeNestState") || localStorage.getItem("timeNestState");
+        if (saved) localStorage.setItem(stateStorageKey, saved);
+      }
       if (!saved) return structuredClone(defaultState);
       const parsed = JSON.parse(saved);
       parsed.ownedRewards ??= Array.isArray(parsed.ownedRewards) ? parsed.ownedRewards : [];
@@ -17293,6 +17382,108 @@
       return snapshot;
     }
 
+    function persistSyncSession(session = {}) {
+      const values = {
+        SupabaseAccessToken: session.access_token || "",
+        SupabaseRefreshToken: session.refresh_token || "",
+        UserId: session.user?.id || session.user_id || "",
+        Username: session.username || syncConfig.username || ""
+      };
+      Object.entries(values).forEach(([name, value]) => {
+        const key = `${storagePrefix}:${name}`;
+        if (value) localStorage.setItem(key, value);
+        else localStorage.removeItem(key);
+      });
+      syncConfig.accessToken = values.SupabaseAccessToken;
+      syncConfig.refreshToken = values.SupabaseRefreshToken;
+      syncConfig.userId = values.UserId;
+      syncConfig.username = values.Username;
+    }
+
+    function clearSyncSession() {
+      ["SupabaseAccessToken", "SupabaseRefreshToken", "UserId", "Username"].forEach(name => {
+        localStorage.removeItem(`${storagePrefix}:${name}`);
+      });
+      syncConfig.accessToken = "";
+      syncConfig.refreshToken = "";
+      syncConfig.userId = "";
+      syncConfig.username = "";
+      syncState?.setStatus?.("local");
+      renderAuthStatus();
+    }
+
+    function normalizeUsername(username) {
+      return String(username || "").trim().toLowerCase();
+    }
+
+    function usernameEmail(username) {
+      return `${normalizeUsername(username)}@timenest.local`;
+    }
+
+    function validateUsername(username) {
+      const normalized = normalizeUsername(username);
+      return /^[a-z0-9_]{3,24}$/.test(normalized) ? normalized : "";
+    }
+
+    function authEndpoint(path) {
+      return `${syncConfig.url.replace(/\/$/, "")}/auth/v1/${path}`;
+    }
+
+    async function authRequest(path, body, token = null) {
+      if (!syncConfig.url || !syncConfig.anonKey) {
+        throw new Error("Supabase is not configured.");
+      }
+      const headers = {
+        apikey: syncConfig.anonKey,
+        "Content-Type": "application/json"
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(authEndpoint(path), {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body || {})
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.msg || data.message || data.error_description || `Auth failed: ${response.status}`);
+      }
+      return data;
+    }
+
+    async function signInWithUsername(username, password) {
+      const normalized = validateUsername(username);
+      if (!normalized) throw new Error("用户名需为 3-24 位小写字母、数字或下划线。");
+      const data = await authRequest("token?grant_type=password", {
+        email: usernameEmail(normalized),
+        password
+      });
+      persistSyncSession({ ...data, username: normalized });
+      await syncState.pullRemoteState();
+      await syncState.pushLocalState();
+      render();
+      return data;
+    }
+
+    async function registerWithUsername(username, password) {
+      const normalized = validateUsername(username);
+      if (!normalized) throw new Error("用户名需为 3-24 位小写字母、数字或下划线。");
+      if (String(password || "").length < 6) throw new Error("密码至少 6 位。");
+      const data = await authRequest("signup", {
+        email: usernameEmail(normalized),
+        password,
+        data: { username: normalized }
+      });
+      if (data.access_token) {
+        persistSyncSession({ ...data, username: normalized });
+      } else {
+        await signInWithUsername(normalized, password);
+      }
+      await syncState.upsertProfile(normalized);
+      await syncState.pushLocalState();
+      render();
+      return data;
+    }
+
     const syncState = {
       pendingTimer: null,
       status: syncConfig.userId ? "queued" : "local",
@@ -17312,19 +17503,35 @@
         this.status = status;
         renderSyncStatus();
       },
+      async upsertProfile(username = syncConfig.username) {
+        if (!this.configured() || !username) return false;
+        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/profiles?on_conflict=id`;
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify({
+            id: syncConfig.userId,
+            username,
+            display_name: username,
+            updated_at: new Date().toISOString()
+          })
+        });
+        if (!response.ok) throw new Error(`Profile save failed: ${response.status}`);
+        return true;
+      },
       async pullRemoteState(userId = syncConfig.userId) {
         if (!this.configured() || !userId) {
           this.setStatus("local");
           return null;
         }
-        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/user_state?user_id=eq.${encodeURIComponent(userId)}&select=state,updated_at&limit=1`;
+        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/user_state?user_id=eq.${encodeURIComponent(userId)}&app_scope=eq.${encodeURIComponent(syncConfig.appScope)}&select=state,updated_at&limit=1`;
         const response = await fetch(endpoint, { headers: this.headers() });
         if (!response.ok) throw new Error(`Pull failed: ${response.status}`);
         const rows = await response.json();
         const remote = rows[0]?.state || null;
         if (remote) {
           state = mergeState(state, remote);
-          localStorage.setItem("TimeNestState", JSON.stringify(state));
+          localStorage.setItem(stateStorageKey, JSON.stringify(state));
           render();
         }
         this.setStatus(remote ? "synced" : "empty");
@@ -17336,9 +17543,10 @@
           return false;
         }
         const snapshot = publicStateSnapshot();
-        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/user_state?on_conflict=user_id`;
+        const endpoint = `${syncConfig.url.replace(/\/$/, "")}/rest/v1/user_state?on_conflict=user_id,app_scope`;
         const payload = {
           user_id: userId,
+          app_scope: syncConfig.appScope,
           state: snapshot,
           updated_at: snapshot.sync.updatedAt
         };
@@ -17376,6 +17584,7 @@
         const rows = mutations.map(item => ({
           id: item.id,
           user_id: userId,
+          app_scope: syncConfig.appScope,
           type: item.type,
           payload: item.payload,
           created_at: new Date(item.ts || Date.now()).toISOString()
@@ -17387,7 +17596,7 @@
         });
         if (!response.ok) throw new Error(`Mutation flush failed: ${response.status}`);
         state.sync.mutations = [];
-        localStorage.setItem("TimeNestState", JSON.stringify(state));
+        localStorage.setItem(stateStorageKey, JSON.stringify(state));
       }
     };
 
@@ -17440,7 +17649,7 @@
       if (!options.skipSync) {
         syncState.queueMutation({ type: options.type || "state-save", payload: options.payload || null }, options);
       }
-      localStorage.setItem("TimeNestState", JSON.stringify(state));
+      localStorage.setItem(stateStorageKey, JSON.stringify(state));
     }
 
     function freshTestState() {
@@ -17591,6 +17800,7 @@
       renderPhotoArchive();
       renderTestTools();
       renderSyncStatus();
+      renderAuthStatus();
     }
 
     function renderTestTools() {
@@ -17615,6 +17825,84 @@
         empty: "Cloud ready"
       };
       root.textContent = labels[syncState.status] || syncState.status;
+    }
+
+    function renderAuthStatus() {
+      const button = document.querySelector("#accountButton");
+      if (!button) return;
+      button.textContent = syncConfig.username ? `${syncConfig.username} · ${appScope}` : `登录 · ${appScope}`;
+      button.title = syncConfig.username ? "账号同步已登录" : "登录后可跨设备同步";
+    }
+
+    function closeAuthModal() {
+      const modal = document.querySelector("#authModal");
+      modal.classList.remove("active");
+      modal.setAttribute("aria-hidden", "true");
+      modal.innerHTML = "";
+    }
+
+    function setAuthNote(message) {
+      const note = document.querySelector("#authNote");
+      if (note) note.textContent = message || "";
+    }
+
+    function openAuthModal() {
+      const modal = document.querySelector("#authModal");
+      const configured = Boolean(syncConfig.url && syncConfig.anonKey);
+      modal.classList.add("active");
+      modal.setAttribute("aria-hidden", "false");
+      modal.innerHTML = `
+        <div class="auth-dialog" role="dialog" aria-label="TimeNest账号同步">
+          <div>
+            <h3>账号同步</h3>
+            <p>${syncConfig.username ? `当前账号：${syncConfig.username} · ${appScope}` : "使用用户名和密码登录，跨设备恢复金币、卡牌、城市进度、任务、时间记录和照片整理。"}</p>
+          </div>
+          <div class="auth-form">
+            <input id="authUsername" autocomplete="username" maxlength="24" placeholder="用户名：小写字母/数字/下划线">
+            <input id="authPassword" autocomplete="current-password" type="password" maxlength="64" placeholder="密码">
+          </div>
+          <div class="auth-note" id="authNote">${configured ? "" : "还没有配置 Supabase URL 和 anon key。"}</div>
+          <div class="auth-actions">
+            <button class="primary" id="authLogin" type="button" ${configured ? "" : "disabled"}>登录</button>
+            <button class="secondary" id="authRegister" type="button" ${configured ? "" : "disabled"}>注册</button>
+            ${syncConfig.username ? `<button class="secondary" id="authLogout" type="button">退出</button>` : ""}
+            <button class="secondary" id="authClose" type="button">关闭</button>
+          </div>
+        </div>
+      `;
+      modal.querySelector("#authClose").addEventListener("click", closeAuthModal);
+      modal.addEventListener("click", event => {
+        if (event.target === modal) closeAuthModal();
+      }, { once: true });
+      modal.querySelector("#authLogin")?.addEventListener("click", async () => {
+        const username = modal.querySelector("#authUsername").value;
+        const password = modal.querySelector("#authPassword").value;
+        setAuthNote("正在登录并同步...");
+        try {
+          await signInWithUsername(username, password);
+          closeAuthModal();
+          showToast("已登录并同步进度。");
+        } catch (error) {
+          setAuthNote(error.message || "登录失败。");
+        }
+      });
+      modal.querySelector("#authRegister")?.addEventListener("click", async () => {
+        const username = modal.querySelector("#authUsername").value;
+        const password = modal.querySelector("#authPassword").value;
+        setAuthNote("正在注册并同步...");
+        try {
+          await registerWithUsername(username, password);
+          closeAuthModal();
+          showToast("账号已创建，当前进度已同步。");
+        } catch (error) {
+          setAuthNote(error.message || "注册失败。");
+        }
+      });
+      modal.querySelector("#authLogout")?.addEventListener("click", () => {
+        clearSyncSession();
+        closeAuthModal();
+        showToast("已退出账号，本地离线进度仍保留。");
+      });
     }
 
     function normalizePhotoStatus(status) {
@@ -20931,6 +21219,7 @@
 
     document.querySelector("#timerFinish").addEventListener("click", finishTimer);
     document.querySelector("#timerAbandon").addEventListener("click", abandonTimer);
+    document.querySelector("#accountButton")?.addEventListener("click", openAuthModal);
     document.addEventListener("visibilitychange", updateTimerDisplay);
     document.querySelector("#cityShelfButton")?.addEventListener("click", openCityShelf);
     document.addEventListener("click", closeTimelineMenu);

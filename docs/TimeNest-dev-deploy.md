@@ -90,6 +90,49 @@ After deployment, test:
 - First load does not precache later chapter image/card assets.
 - Mobile and desktop PWA launch, refresh, and offline fallback still work.
 
+## Supabase Username Sync
+
+TimeNest uses Supabase Auth internally, but the user-facing login is `username + password`.
+
+Implementation details:
+
+- Username is normalized to lowercase and must match `a-z`, `0-9`, or `_`, length `3-24`.
+- The app maps a username to an internal Auth email: `<username>@timenest.local`.
+- Passwords are handled by Supabase Auth; the static app never stores password hashes.
+- Local storage is scoped by app:
+  - Production: `TimeNest:prod:State`
+  - Dev: `TimeNest:dev:State`
+- Cloud state is also scoped by `app_scope`, so one account can have separate production and dev progress.
+
+Supabase setup:
+
+1. Create a Supabase project.
+2. Run `supabase-schema.sql` in SQL Editor.
+3. In Authentication settings, disable email confirmation for username-only signup, or signup will require a confirmation flow.
+4. Configure the app with:
+
+```js
+localStorage.TimeNestSupabaseUrl = "https://<project>.supabase.co";
+localStorage.TimeNestSupabaseAnonKey = "<anon-key>";
+location.reload();
+```
+
+For per-environment config, use:
+
+```js
+localStorage["TimeNest:prod:SupabaseUrl"] = "https://<project>.supabase.co";
+localStorage["TimeNest:prod:SupabaseAnonKey"] = "<anon-key>";
+localStorage["TimeNest:dev:SupabaseUrl"] = "https://<project>.supabase.co";
+localStorage["TimeNest:dev:SupabaseAnonKey"] = "<anon-key>";
+```
+
+Login behavior:
+
+- Anonymous local progress remains available offline.
+- After login/register, local progress is merged with cloud progress and pushed back.
+- Subsequent saves write local state first, then queue cloud sync.
+- If offline, the local app remains usable and sync resumes when online.
+
 ## Ongoing Flow
 
 1. Develop locally in `D:\TimeNest`.
