@@ -4040,12 +4040,33 @@
       display: inline-grid;
     }
 
+    .photo-table .photo-drag-handle {
+      cursor: grab;
+      color: var(--muted);
+    }
+
+    .photo-table .photo-drag-handle:active {
+      cursor: grabbing;
+    }
+
     .photo-table td.photo-actions {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
       white-space: nowrap;
+    }
+
+    .photo-table tr.photo-dragging {
+      opacity: .45;
+    }
+
+    .photo-table tr.photo-drop-before {
+      box-shadow: inset 0 3px 0 var(--rose);
+    }
+
+    .photo-table tr.photo-drop-after {
+      box-shadow: inset 0 -3px 0 var(--rose);
     }
 
     .photo-year-tabs {
@@ -17253,6 +17274,8 @@
     function normalizePhotoRecord(record) {
       if (!record || typeof record !== "object") return null;
       const now = new Date().toISOString();
+      const createdAt = record.createdAt || now;
+      const sortOrder = Number(record.sortOrder);
       return {
         id: record.id || makeId(),
         year: String(record.year || activePhotoYear || new Date().getFullYear()).trim(),
@@ -17263,7 +17286,8 @@
         photoStatus: normalizePhotoStatus(record.photoStatus),
         videoStatus: normalizePhotoStatus(record.videoStatus),
         journalStatus: normalizePhotoStatus(record.journalStatus),
-        createdAt: record.createdAt || now,
+        sortOrder: Number.isFinite(sortOrder) ? sortOrder : (Date.parse(createdAt) || Date.now()),
+        createdAt,
         updatedAt: record.updatedAt || record.createdAt || now
       };
     }
@@ -17280,7 +17304,7 @@
 
     function photoSortValue(record) {
       const year = Number(record.year) || 9999;
-      return [year, photoMonthOrder(record.month), record.createdAt || "", record.id || ""];
+      return [year, photoMonthOrder(record.month), Number(record.sortOrder) || Date.parse(record.createdAt) || 0, record.id || ""];
     }
 
     function comparePhotoRecords(a, b) {
@@ -17355,6 +17379,7 @@
         photoStatus: form.querySelector('[data-field="photoStatus"]').value,
         videoStatus: form.querySelector('[data-field="videoStatus"]').value,
         journalStatus: form.querySelector('[data-field="journalStatus"]').value,
+        sortOrder: current?.sortOrder ?? Date.now(),
         createdAt: current?.createdAt || now,
         updatedAt: now
       });
@@ -17435,7 +17460,7 @@
           <col>
           <col>
           <col>
-          <col style="width: 74px">
+          <col style="width: 104px">
         </colgroup>
         <thead>
           <tr>
@@ -17464,6 +17489,7 @@
           <td data-status-cell="videoStatus"></td>
           <td data-status-cell="journalStatus"></td>
           <td class="photo-actions">
+            <button class="icon-button photo-drag-handle" data-action="drag" draggable="true" title="拖动排序">↕</button>
             <button class="icon-button" data-action="edit" title="编辑">✎</button>
             <button class="icon-button" data-action="delete" title="删除">×</button>
           </td>
@@ -17494,6 +17520,7 @@
         });
         row.querySelector('[data-action="edit"]').addEventListener("click", () => editPhotoRecord(record.id));
         row.querySelector('[data-action="delete"]').addEventListener("click", () => deletePhotoRecord(record.id));
+        attachPhotoDragHandlers(row, record.id);
         tbody.appendChild(row);
       });
       mergePhotoTableColumn(tbody, ".photo-month", record => record.month || "-");
@@ -17518,6 +17545,79 @@
         listPanel.style.height = `${controlHeight}px`;
         listPanel.classList.add("is-scrollable");
       });
+    }
+
+    let photoDragId = null;
+
+    function clearPhotoDragMarkers() {
+      document.querySelectorAll(".photo-dragging, .photo-drop-before, .photo-drop-after").forEach(element => {
+        element.classList.remove("photo-dragging", "photo-drop-before", "photo-drop-after");
+      });
+    }
+
+    function attachPhotoDragHandlers(row, recordId) {
+      const handle = row.querySelector('[data-action="drag"]');
+      if (!handle) return;
+      handle.addEventListener("dragstart", event => {
+        photoDragId = recordId;
+        row.classList.add("photo-dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", recordId);
+      });
+      handle.addEventListener("dragend", () => {
+        photoDragId = null;
+        clearPhotoDragMarkers();
+      });
+      row.addEventListener("dragover", event => {
+        if (!photoDragId || photoDragId === recordId) return;
+        event.preventDefault();
+        const rect = row.getBoundingClientRect();
+        const dropAfter = event.clientY > rect.top + rect.height / 2;
+        row.classList.toggle("photo-drop-before", !dropAfter);
+        row.classList.toggle("photo-drop-after", dropAfter);
+      });
+      row.addEventListener("dragleave", () => {
+        row.classList.remove("photo-drop-before", "photo-drop-after");
+      });
+      row.addEventListener("drop", event => {
+        event.preventDefault();
+        const dragId = photoDragId || event.dataTransfer.getData("text/plain");
+        const rect = row.getBoundingClientRect();
+        reorderPhotoRecord(dragId, recordId, event.clientY > rect.top + rect.height / 2);
+        photoDragId = null;
+        clearPhotoDragMarkers();
+      });
+    }
+
+    function reorderPhotoRecord(dragId, targetId, placeAfter) {
+      if (!dragId || !targetId || dragId === targetId) return;
+      const dragged = state.photoArchive.find(item => item.id === dragId);
+      const target = state.photoArchive.find(item => item.id === targetId);
+      if (!dragged || !target) return;
+      if (dragged.year !== target.year || dragged.month !== target.month) {
+        showToast("只能在同一年同一月份内调整顺序。");
+        return;
+      }
+      const ids = state.photoArchive
+        .filter(item => item.year === dragged.year && item.month === dragged.month)
+        .sort(comparePhotoRecords)
+        .map(item => item.id)
+        .filter(id => id !== dragId);
+      const targetIndex = ids.indexOf(targetId);
+      if (targetIndex < 0) return;
+      ids.splice(targetIndex + (placeAfter ? 1 : 0), 0, dragId);
+      const now = Date.now();
+      const updatedAt = new Date().toISOString();
+      ids.forEach((id, index) => {
+        const record = state.photoArchive.find(item => item.id === id);
+        if (record) {
+          record.sortOrder = now + index;
+          record.updatedAt = updatedAt;
+        }
+      });
+      saveState();
+      renderPhotoArchive();
+      showToast("顺序已调整。");
     }
 
     function mergePhotoTableColumn(tbody, selector, keyForRecord) {
@@ -20540,6 +20640,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: keep photo archive table scrollable v135 -->
+  <!-- deploy: add photo row drag sorting v136 -->
 </body>
 </html>
