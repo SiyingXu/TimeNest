@@ -17908,6 +17908,31 @@
       const configured = Boolean(syncConfig.url && syncConfig.anonKey);
       modal.classList.add("active");
       modal.setAttribute("aria-hidden", "false");
+      if (syncConfig.username) {
+        modal.innerHTML = `
+          <div class="auth-dialog" role="dialog" aria-label="TimeNest账号同步">
+            <div>
+              <h3>账号同步</h3>
+              <p>当前账号：${syncConfig.username}${appScope === "dev" ? " · dev" : ""}</p>
+            </div>
+            <div class="auth-note" id="authNote">${syncState.status === "synced" ? "当前进度已同步。" : "云同步队列会在网络和数据库就绪后自动重试。"}</div>
+            <div class="auth-actions">
+              <button class="secondary" id="authLogout" type="button">退出</button>
+              <button class="secondary" id="authClose" type="button">关闭</button>
+            </div>
+          </div>
+        `;
+        modal.querySelector("#authClose").addEventListener("click", closeAuthModal);
+        modal.addEventListener("click", event => {
+          if (event.target === modal) closeAuthModal();
+        }, { once: true });
+        modal.querySelector("#authLogout")?.addEventListener("click", () => {
+          clearSyncSession();
+          closeAuthModal();
+          showToast("已退出账号，本地离线进度仍保留。");
+        });
+        return;
+      }
       modal.innerHTML = `
         <div class="auth-dialog" role="dialog" aria-label="TimeNest账号同步">
           <div>
