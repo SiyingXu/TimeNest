@@ -3931,7 +3931,6 @@
     }
 
     .photo-filters input,
-    .photo-form input[data-field="city"],
     .photo-form input[data-field="note"] {
       grid-column: 1 / -1;
     }
@@ -3953,7 +3952,7 @@
 
     .photo-table {
       width: 100%;
-      min-width: 760px;
+      min-width: 720px;
       border-collapse: collapse;
       table-layout: fixed;
       font-size: 13px;
@@ -3962,74 +3961,40 @@
     .photo-table th,
     .photo-table td {
       border: 1px solid #d8dee8;
-      padding: 8px 9px;
+      padding: 4px 7px;
       text-align: center;
       vertical-align: middle;
       overflow-wrap: anywhere;
+      line-height: 1.25;
     }
 
     .photo-table th {
       background: #fde9ee;
       color: var(--ink);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 950;
     }
 
-    .photo-table th.photo-table-title {
-      background: #ffe9a8;
-      color: #8a4b04;
-    }
-
-    .photo-table td.photo-year,
-    .photo-table td.photo-month {
-      background: #dbe5f5;
-      font-weight: 950;
-    }
-
-    .photo-table td.photo-country {
-      background: #eef3f8;
-      font-weight: 950;
-    }
-
+    .photo-table td.photo-month,
+    .photo-table td.photo-country,
     .photo-table td.photo-city {
-      font-weight: 850;
+      font-weight: 950;
     }
 
-    .photo-table tr:nth-child(4n + 1) td {
-      background-color: #f8fbff;
-    }
-
-    .photo-table tr:nth-child(4n + 2) td {
-      background-color: #f7f0ff;
-    }
-
-    .photo-table tr:nth-child(4n + 3) td {
-      background-color: #f2faef;
-    }
-
-    .photo-table tr:nth-child(4n) td {
-      background-color: #fff6da;
-    }
-
-    .photo-table tr td.photo-year,
-    .photo-table tr td.photo-month {
-      background: #dbe5f5;
-    }
-
-    .photo-table tr td.photo-actions {
+    .photo-table td {
       background: #fff;
     }
 
     .photo-check {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       display: inline-grid;
       place-items: center;
       border: 2px solid #1d4ed8;
       border-radius: 4px;
       background: #fffaf0;
       color: #050505;
-      font-size: 18px;
+      font-size: 15px;
       line-height: 1;
       font-weight: 950;
     }
@@ -4047,14 +4012,14 @@
     }
 
     .photo-none-button {
-      width: 24px;
-      height: 24px;
-      margin-left: 6px;
+      width: 20px;
+      height: 20px;
+      margin-left: 4px;
       border: 1px solid #cbd5e1;
       border-radius: 4px;
       background: #f8fafc;
       color: #64748b;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 950;
       line-height: 1;
     }
@@ -4066,10 +4031,33 @@
     }
 
     .photo-table .icon-button {
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
+      min-height: 28px;
+      margin: 0 1px;
+    }
+
+    .photo-year-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .photo-year-tab {
       min-height: 34px;
-      margin: 0 2px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .photo-year-tab.active {
+      background: #fde9ee;
+      border-color: #f3c1cf;
+      color: var(--rose-dark);
     }
 
     nav {
@@ -4768,6 +4756,7 @@
 
           <div class="panel photo-list-panel">
             <h2>地点清单</h2>
+            <div class="photo-year-tabs" id="photoYearTabs"></div>
             <div class="photo-table-wrap" id="photoArchiveList"></div>
           </div>
         </div>
@@ -17044,6 +17033,7 @@
     let photoSearchTerm = "";
     let photoStatusFilter = "all";
     let photoMonthFilter = "all";
+    let activePhotoYear = String(new Date().getFullYear());
 
     const photoStatusMeta = {
       todo: { label: "□", text: "未完成" },
@@ -17233,7 +17223,7 @@
       const now = new Date().toISOString();
       return {
         id: record.id || makeId(),
-        year: String(record.year || "").trim(),
+        year: String(record.year || activePhotoYear || new Date().getFullYear()).trim(),
         month: String(record.month || "").trim(),
         country: String(record.country || record.trip || "").trim(),
         city: String(record.city || record.place || "").trim(),
@@ -17246,6 +17236,31 @@
       };
     }
 
+    function photoMonthOrder(month) {
+      const text = String(month || "").trim().toLowerCase();
+      const cn = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
+      const cnIndex = cn.indexOf(text);
+      if (cnIndex >= 0) return cnIndex + 1;
+      const match = text.match(/\d{1,2}/);
+      if (match) return Math.max(1, Math.min(12, Number(match[0])));
+      return 99;
+    }
+
+    function photoSortValue(record) {
+      const year = Number(record.year) || 9999;
+      return [year, photoMonthOrder(record.month), record.country || "", record.city || "", record.createdAt || ""];
+    }
+
+    function comparePhotoRecords(a, b) {
+      const left = photoSortValue(a);
+      const right = photoSortValue(b);
+      for (let index = 0; index < left.length; index += 1) {
+        if (left[index] < right[index]) return -1;
+        if (left[index] > right[index]) return 1;
+      }
+      return 0;
+    }
+
     function photoRecordOpen(record) {
       return ["photoStatus", "videoStatus", "journalStatus"].some(field => record[field] === "todo");
     }
@@ -17255,6 +17270,7 @@
     }
 
     function photoRecordMatches(record) {
+      const yearMatch = record.year === activePhotoYear;
       const monthMatch = photoMonthFilter === "all" || record.month === photoMonthFilter;
       const statusMatch = photoStatusFilter === "all"
         || (photoStatusFilter === "open" && photoRecordOpen(record))
@@ -17264,14 +17280,14 @@
         .join(" ")
         .toLowerCase()
         .includes(search);
-      return monthMatch && statusMatch && searchMatch;
+      return yearMatch && monthMatch && statusMatch && searchMatch;
     }
 
     function setPhotoFormMode(record = null) {
       const form = document.querySelector("#photoForm");
       if (!form) return;
       const values = record || {
-        year: "",
+        year: activePhotoYear || String(new Date().getFullYear()),
         month: "",
         country: "",
         city: "",
@@ -17312,6 +17328,7 @@
       const root = document.querySelector("#photoArchiveList");
       if (!root) return;
       state.photoArchive = Array.isArray(state.photoArchive) ? state.photoArchive.map(normalizePhotoRecord).filter(Boolean) : [];
+      state.photoArchive.sort(comparePhotoRecords);
       const total = state.photoArchive.length;
       const searchInput = document.querySelector("#photoSearch");
       const statusSelect = document.querySelector("#photoStatusFilter");
@@ -17322,8 +17339,27 @@
       document.querySelector("#videoTodoCount").textContent = state.photoArchive.filter(item => item.videoStatus === "todo").length;
       document.querySelector("#journalTodoCount").textContent = state.photoArchive.filter(item => item.journalStatus === "todo").length;
 
+      const yearTabs = document.querySelector("#photoYearTabs");
+      const currentYear = String(new Date().getFullYear());
+      const years = [...new Set(state.photoArchive.map(item => item.year).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
+      if (!years.includes(activePhotoYear)) activePhotoYear = years.includes(currentYear) ? currentYear : (years[0] || currentYear);
+      yearTabs.innerHTML = "";
+      (years.length ? years : [activePhotoYear]).forEach(year => {
+        const button = document.createElement("button");
+        button.className = `photo-year-tab${year === activePhotoYear ? " active" : ""}`;
+        button.type = "button";
+        button.textContent = year;
+        button.addEventListener("click", () => {
+          activePhotoYear = year;
+          photoMonthFilter = "all";
+          renderPhotoArchive();
+        });
+        yearTabs.appendChild(button);
+      });
+
       const monthSelect = document.querySelector("#photoMonthFilter");
-      const months = [...new Set(state.photoArchive.map(item => item.month).filter(Boolean))];
+      const months = [...new Set(state.photoArchive.filter(item => item.year === activePhotoYear).map(item => item.month).filter(Boolean))]
+        .sort((a, b) => photoMonthOrder(a) - photoMonthOrder(b) || a.localeCompare(b, "zh-CN"));
       const currentMonth = months.includes(photoMonthFilter) ? photoMonthFilter : "all";
       photoMonthFilter = currentMonth;
       monthSelect.innerHTML = "";
@@ -17339,7 +17375,7 @@
       });
       monthSelect.value = currentMonth;
 
-      const visible = state.photoArchive.filter(photoRecordMatches);
+      const visible = state.photoArchive.filter(photoRecordMatches).sort(comparePhotoRecords);
       root.innerHTML = "";
       if (!state.photoArchive.length) {
         root.innerHTML = `<div class="empty">还没有照片整理记录。先新增一个地点吧。</div>`;
@@ -17355,14 +17391,6 @@
       table.innerHTML = `
         <thead>
           <tr>
-            <th class="photo-table-title" colspan="5">旅行素材整理</th>
-            <th>照片</th>
-            <th>视频</th>
-            <th>手账</th>
-            <th>操作</th>
-          </tr>
-          <tr>
-            <th>年份</th>
             <th>月份</th>
             <th>国家</th>
             <th>城市</th>
@@ -17380,7 +17408,6 @@
         const row = document.createElement("tr");
         row.dataset.photoId = record.id;
         row.innerHTML = `
-          <td class="photo-year"></td>
           <td class="photo-month"></td>
           <td class="photo-country"></td>
           <td class="photo-city"></td>
@@ -17393,7 +17420,6 @@
             <button class="icon-button" data-action="delete" title="删除">×</button>
           </td>
         `;
-        row.querySelector(".photo-year").textContent = record.year || "-";
         row.querySelector(".photo-month").textContent = record.month || "-";
         row.querySelector(".photo-country").textContent = record.country || "-";
         row.querySelector(".photo-city").textContent = record.city || "未命名地点";
@@ -17424,7 +17450,30 @@
         row.querySelector('[data-action="delete"]').addEventListener("click", () => deletePhotoRecord(record.id));
         tbody.appendChild(row);
       });
+      mergePhotoTableColumn(tbody, ".photo-month", record => record.month || "-");
+      mergePhotoTableColumn(tbody, ".photo-country", record => `${record.month || "-"}|${record.country || "-"}`);
+      mergePhotoTableColumn(tbody, ".photo-city", record => `${record.month || "-"}|${record.country || "-"}|${record.city || "未命名地点"}`);
       root.appendChild(table);
+    }
+
+    function mergePhotoTableColumn(tbody, selector, keyForRecord) {
+      let previousKey = null;
+      let previousCell = null;
+      let span = 1;
+      Array.from(tbody.rows).forEach(row => {
+        const record = state.photoArchive.find(item => item.id === row.dataset.photoId);
+        const cell = row.querySelector(selector);
+        const key = record ? keyForRecord(record) : "";
+        if (previousCell && key === previousKey) {
+          span += 1;
+          previousCell.rowSpan = span;
+          cell.remove();
+          return;
+        }
+        previousKey = key;
+        previousCell = cell;
+        span = 1;
+      });
     }
 
     function savePhotoRecordFromForm() {
@@ -17441,6 +17490,8 @@
         showToast("已新增照片整理地点。");
       }
       editingPhotoId = null;
+      activePhotoYear = record.year || activePhotoYear;
+      photoMonthFilter = "all";
       setPhotoFormMode(null);
       saveState();
       renderPhotoArchive();
@@ -20435,6 +20486,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: align city panel heights v130 -->
+  <!-- deploy: refine photo archive yearly table v131 -->
 </body>
 </html>
