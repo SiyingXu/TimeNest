@@ -5034,6 +5034,10 @@
     const storagePrefix = `TimeNest:${appScope}`;
     const storageSchemaVersion = "v2";
     const stateStorageKey = `${storagePrefix}:State:${storageSchemaVersion}`;
+    const embeddedSupabaseConfig = {
+      url: "https://kelkntpunwdxxereygce.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlbGtudHB1bndkeHhlcmV5Z2NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNjM0NDYsImV4cCI6MjA5ODgzOTQ0Nn0.zzeZL8ecLqHntK8ujy-aly3YOr8TV4qhcfMCP6R23ZE"
+    };
     const devModeKey = "TimeNestDevMode";
     const devMode = devParams.get("dev") === "1" || localStorage.getItem(devModeKey) === "true";
     const ENABLE_TEST_TOOLS = devMode;
@@ -5044,8 +5048,8 @@
     }
     const syncConfig = {
       appScope,
-      url: scopedStorageValue("SupabaseUrl", "TimeNestSupabaseUrl") || window.TIMENEST_SUPABASE_URL || "",
-      anonKey: scopedStorageValue("SupabaseAnonKey", "TimeNestSupabaseAnonKey") || window.TIMENEST_SUPABASE_ANON_KEY || "",
+      url: scopedStorageValue("SupabaseUrl", "TimeNestSupabaseUrl") || window.TIMENEST_SUPABASE_URL || embeddedSupabaseConfig.url || "",
+      anonKey: scopedStorageValue("SupabaseAnonKey", "TimeNestSupabaseAnonKey") || window.TIMENEST_SUPABASE_ANON_KEY || embeddedSupabaseConfig.anonKey || "",
       accessToken: localStorage.getItem(`${storagePrefix}:SupabaseAccessToken`) || "",
       refreshToken: localStorage.getItem(`${storagePrefix}:SupabaseRefreshToken`) || "",
       userId: localStorage.getItem(`${storagePrefix}:UserId`) || "",
@@ -17410,16 +17414,33 @@
     }
 
     function normalizeUsername(username) {
-      return String(username || "").trim().toLowerCase();
+      return String(username || "").trim().replace(/\s+/g, " ");
     }
 
-    function usernameEmail(username) {
-      return `${normalizeUsername(username)}@timenest.local`;
+    async function usernameEmail(username) {
+      const normalized = normalizeUsername(username);
+      const source = new TextEncoder().encode(`timenest:${normalized}`);
+      if (window.crypto?.subtle) {
+        const digest = await window.crypto.subtle.digest("SHA-256", source);
+        const hash = Array.from(new Uint8Array(digest))
+          .map(byte => byte.toString(16).padStart(2, "0"))
+          .join("")
+          .slice(0, 40);
+        return `user-${hash}@timenest.local`;
+      }
+      let hash = 2166136261;
+      for (const byte of source) {
+        hash ^= byte;
+        hash = Math.imul(hash, 16777619);
+      }
+      return `user-${(hash >>> 0).toString(16)}@timenest.local`;
     }
 
     function validateUsername(username) {
       const normalized = normalizeUsername(username);
-      return /^[a-z0-9_]{3,24}$/.test(normalized) ? normalized : "";
+      const length = Array.from(normalized).length;
+      if (length < 2 || length > 24) return "";
+      return /^[\p{L}\p{N}_ -]+$/u.test(normalized) ? normalized : "";
     }
 
     function authEndpoint(path) {
@@ -17449,9 +17470,9 @@
 
     async function signInWithUsername(username, password) {
       const normalized = validateUsername(username);
-      if (!normalized) throw new Error("用户名需为 3-24 位小写字母、数字或下划线。");
+      if (!normalized) throw new Error("用户名需为 2-24 位中文、字母、数字、空格、短横线或下划线。");
       const data = await authRequest("token?grant_type=password", {
-        email: usernameEmail(normalized),
+        email: await usernameEmail(normalized),
         password
       });
       persistSyncSession({ ...data, username: normalized });
@@ -17463,10 +17484,10 @@
 
     async function registerWithUsername(username, password) {
       const normalized = validateUsername(username);
-      if (!normalized) throw new Error("用户名需为 3-24 位小写字母、数字或下划线。");
+      if (!normalized) throw new Error("用户名需为 2-24 位中文、字母、数字、空格、短横线或下划线。");
       if (String(password || "").length < 6) throw new Error("密码至少 6 位。");
       const data = await authRequest("signup", {
-        email: usernameEmail(normalized),
+        email: await usernameEmail(normalized),
         password,
         data: { username: normalized }
       });
@@ -17856,7 +17877,7 @@
             <p>${syncConfig.username ? `当前账号：${syncConfig.username} · ${appScope}` : "使用用户名和密码登录，跨设备恢复金币、卡牌、城市进度、任务、时间记录和照片整理。"}</p>
           </div>
           <div class="auth-form">
-            <input id="authUsername" autocomplete="username" maxlength="24" placeholder="用户名：小写字母/数字/下划线">
+            <input id="authUsername" autocomplete="username" maxlength="24" placeholder="用户名：中文 / 字母 / 数字">
             <input id="authPassword" autocomplete="current-password" type="password" maxlength="64" placeholder="密码">
           </div>
           <div class="auth-note" id="authNote">${configured ? "" : "还没有配置 Supabase URL 和 anon key。"}</div>

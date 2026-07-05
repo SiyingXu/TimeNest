@@ -96,8 +96,8 @@ TimeNest uses Supabase Auth internally, but the user-facing login is `username +
 
 Implementation details:
 
-- Username is normalized to lowercase and must match `a-z`, `0-9`, or `_`, length `3-24`.
-- The app maps a username to an internal Auth email: `<username>@timenest.local`.
+- Username can use Chinese characters, letters, numbers, spaces, hyphens, or underscores, length `2-24`.
+- The app maps a username to a stable internal Auth email hash such as `user-<hash>@timenest.local`.
 - Passwords are handled by Supabase Auth; the static app never stores password hashes.
 - Local storage is scoped by app:
   - Production: `TimeNest:prod:State:v2`
@@ -111,6 +111,10 @@ Supabase setup:
 2. Run `supabase-schema.sql` in SQL Editor.
 3. In Authentication settings, disable email confirmation for username-only signup, or signup will require a confirmation flow.
 4. Configure the app with:
+
+For production, the preferred setup is to write the public Supabase URL and anon key into `embeddedSupabaseConfig` in `index.html`.
+
+For local one-device testing, you can still use:
 
 ```js
 localStorage.TimeNestSupabaseUrl = "https://<project>.supabase.co";
