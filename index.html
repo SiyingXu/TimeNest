@@ -4661,6 +4661,34 @@
       "fussen|老城街角": "菲森老城有彩色立面和安静街角，适合在离开前慢慢收尾。"
     };
 
+    const firstChapterCityDescriptions = {
+      tuebingen: "图宾根是一座沿内卡河生长的大学城，木筋屋、河岸小船和山上的城堡让日常也很像旅行。",
+      freiburg: "弗赖堡靠近黑森林，阳光、溪渠和大教堂广场构成了它轻快又适合散步的城市气质。",
+      stuttgart: "斯图加特藏在山坡与葡萄园之间，既有汽车工业的现代感，也有适合周末慢逛的城市中心。",
+      heidelberg: "海德堡把城堡、内卡河和大学传统连在一起，是德国浪漫旅行想象里很经典的一站。",
+      frankfurt: "法兰克福一边是金融天际线，一边是美因河和博物馆岸，适合感受德国现代城市的节奏。",
+      cologne: "科隆围绕莱茵河和大教堂展开，宏大的哥特尖塔与热闹河岸让这座城市很有辨识度。",
+      aachen: "亚琛位于德国西部边境，温泉传统和查理曼大帝的历史让它带着浓厚的欧洲中世纪气息。",
+      bremen: "不来梅是一座带着童话感的汉萨城市，市政厅广场、雕像和老街区都适合慢慢发现。",
+      hamburg: "汉堡是德国重要港口城市，运河、仓库城和海港风景让它拥有开阔的北方气息。",
+      lubeck: "吕贝克曾是汉萨同盟重镇，水环老城、红砖建筑和杏仁糖让它有独特的北德味道。",
+      berlin: "柏林层层叠着历史、艺术和当代生活，从博物馆岛到街头壁画都能看到城市的多重性格。",
+      dresden: "德累斯顿以巴洛克建筑和易北河风景闻名，重建后的老城保留着优雅又复杂的历史记忆。",
+      leipzig: "莱比锡有音乐传统、书展气质和新兴艺术区，是一座从历史街巷走向创意生活的城市。",
+      nuremberg: "纽伦堡保留了浓厚的中世纪老城轮廓，城堡、市集和手工传统让它很有节日感。",
+      rothenburg: "罗滕堡像被城墙圈住的中世纪小镇，木筋屋、塔楼和石板路让每个转角都很上镜。",
+      ulm: "乌尔姆坐落在多瑙河畔，以高耸的大教堂尖塔和临水老街展现安静的南德城市风景。",
+      munich: "慕尼黑把巴伐利亚传统、博物馆和大型公园放在同一座城市里，热闹但不失从容。",
+      fussen: "菲森靠近阿尔卑斯山和新天鹅堡，山湖、城堡与彩色老城让它很适合作为德国路线的收尾。"
+    };
+
+    function routeCityDescription(city) {
+      if (city.chapter === "德国漫游" && firstChapterCityDescriptions[city.id]) {
+        return firstChapterCityDescriptions[city.id];
+      }
+      return `${city.name} 是 ${city.country} · ${city.chapter} 路线中的一站，适合用城市卡记录抵达这一刻，再慢慢展开本城的风景和故事。`;
+    }
+
     const firstChapterSightPrices = {
       "tuebingen|内卡河小船": 80,
       "tuebingen|老城集市": 60,
@@ -16515,7 +16543,8 @@
         border: index % 4 === 0 ? "green" : index % 4 === 1 ? "blue" : index % 4 === 2 ? "gold" : "rose",
         art: city.id === "shanghai" ? "shanghai" : "tuebingen",
         ...journeyCardArt(city),
-        cardLine: `${city.chapter}：${city.visits.join(" / ")}。`,
+        desc: routeCityDescription(city),
+        cardLine: routeCityDescription(city),
         routeCityId: city.id,
         routeIndex: index,
         routePreviousCity: previous?.id || null
@@ -16707,6 +16736,13 @@
       desc: firstChapterSightDescriptions["freiburg|黑森林入口"],
       cardLine: firstChapterSightDescriptions["freiburg|黑森林入口"]
     });
+
+    journeyCities
+      .forEach(city => {
+        const item = shopItems.find(reward => reward.id === cityCardId(city.id));
+        const description = routeCityDescription(city);
+        if (item) Object.assign(item, { desc: description, cardLine: description });
+      });
 
     journeyCities
       .filter(city => city.chapter === "德国漫游")
@@ -19783,6 +19819,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: show full card previews v123 -->
+  <!-- deploy: city card descriptions v124 -->
 </body>
 </html>
