@@ -17636,6 +17636,8 @@
 
     const syncState = {
       pendingTimer: null,
+      activeSync: null,
+      lastSyncAt: 0,
       status: syncConfig.userId ? "queued" : "local",
       configured() {
         return Boolean(syncConfig.url && syncConfig.anonKey && syncConfig.userId);
@@ -17664,6 +17666,28 @@
           this.setStatus(isSupabaseSchemaError(error) ? "setup" : "offline");
           return false;
         }
+      },
+      async syncNow(options = {}) {
+        if (!this.configured()) {
+          this.setStatus("local");
+          return false;
+        }
+        if (this.activeSync) return this.activeSync;
+        this.activeSync = (async () => {
+          try {
+            if (options.pull !== false) await this.pullRemoteState();
+            await this.pushLocalState();
+            this.lastSyncAt = Date.now();
+            return true;
+          } catch (error) {
+            console.warn(error);
+            this.setStatus(isSupabaseSchemaError(error) ? "setup" : "offline");
+            return false;
+          } finally {
+            this.activeSync = null;
+          }
+        })();
+        return this.activeSync;
       },
       async upsertProfile(username = syncConfig.username) {
         if (!this.configured() || !username) return false;
@@ -17739,7 +17763,7 @@
         this.setStatus(this.configured() ? "queued" : "local");
         clearTimeout(this.pendingTimer);
         this.pendingTimer = setTimeout(() => {
-          this.pushLocalState().catch(() => this.setStatus("offline"));
+          this.syncNow();
         }, 1200);
       },
       async flushMutations(userId = syncConfig.userId) {
@@ -21597,13 +21621,27 @@
     }
 
     window.addEventListener("online", () => {
-      syncState.pushLocalState().catch(() => syncState.setStatus("offline"));
+      syncState.syncNow();
+    });
+
+    window.addEventListener("focus", () => {
+      syncState.syncNow();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) syncState.syncNow();
+    });
+
+    setInterval(() => {
+      if (!document.hidden && syncState.configured()) syncState.syncNow();
+    }, 45 * 1000);
+
+    window.addEventListener("beforeunload", () => {
+      syncState.syncNow({ pull: false });
     });
 
     if (syncState.configured()) {
-      syncState.pullRemoteState()
-        .then(() => syncState.pushLocalState())
-        .catch(() => syncState.setStatus("offline"));
+      syncState.syncNow();
     }
 
     render();
