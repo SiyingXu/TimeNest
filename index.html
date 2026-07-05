@@ -17454,6 +17454,20 @@
       return `${action}失败：${status}`;
     }
 
+    function authErrorMessage(path, data, status) {
+      const raw = String(data?.msg || data?.message || data?.error_description || data?.error || "").trim();
+      const lowered = raw.toLowerCase();
+      if (path.startsWith("signup") && (
+        lowered.includes("already registered")
+        || lowered.includes("already exists")
+        || lowered.includes("user_already_exists")
+      )) {
+        return "用户名已存在，请重新取名。";
+      }
+      if (lowered.includes("invalid login credentials")) return "用户名或密码不正确。";
+      return raw || `Auth failed: ${status}`;
+    }
+
     async function authRequest(path, body, token = null) {
       if (!syncConfig.url || !syncConfig.anonKey) {
         throw new Error("Supabase is not configured.");
@@ -17470,7 +17484,7 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data.msg || data.message || data.error_description || `Auth failed: ${response.status}`);
+        throw new Error(authErrorMessage(path, data, response.status));
       }
       return data;
     }
