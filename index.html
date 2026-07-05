@@ -4462,7 +4462,7 @@
           <div class="weekly-grid">
             <div class="stat">
               <strong id="weekMinutes">0</strong>
-              <span>本周专注分钟</span>
+              <span>本周解锁城市</span>
             </div>
             <div class="stat">
               <strong id="weekCoins">0</strong>
@@ -4546,7 +4546,7 @@
       owned: [],
       ownedRewards: ["tuebingen-card"],
       pet: { food: 70, mood: 72, energy: 68 },
-      travel: { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [] },
+      travel: { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [], cityUnlocks: {} },
       chapterRewards: [],
       funds: {},
       wishlist: [],
@@ -16794,12 +16794,15 @@
       parsed.pet.food ??= 70;
       parsed.pet.mood ??= 72;
       parsed.pet.energy ??= 68;
-      parsed.travel ??= { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [] };
+      parsed.travel ??= { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [], cityUnlocks: {} };
       parsed.travel.currentCityId ??= "tuebingen";
       parsed.travel.arrivedCities = Array.isArray(parsed.travel.arrivedCities) ? parsed.travel.arrivedCities : ["tuebingen"];
       if (!parsed.travel.arrivedCities.includes("tuebingen")) parsed.travel.arrivedCities.unshift("tuebingen");
       if (!parsed.travel.arrivedCities.includes(parsed.travel.currentCityId)) parsed.travel.arrivedCities.push(parsed.travel.currentCityId);
       parsed.travel.tickets = Array.isArray(parsed.travel.tickets) ? parsed.travel.tickets : [];
+      parsed.travel.cityUnlocks = parsed.travel.cityUnlocks && typeof parsed.travel.cityUnlocks === "object" && !Array.isArray(parsed.travel.cityUnlocks)
+        ? parsed.travel.cityUnlocks
+        : {};
       parsed.chapterRewards = Array.isArray(parsed.chapterRewards) ? parsed.chapterRewards : [];
       parsed.funds ??= {};
       parsed.wishlist ??= [];
@@ -16840,7 +16843,7 @@
       const nextState = structuredClone(defaultState);
       nextState.coins = 0;
       nextState.ownedRewards = [];
-      nextState.travel = { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [] };
+      nextState.travel = { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [], cityUnlocks: {} };
       nextState.history = [];
       nextState.records = [];
       nextState.tasks = [];
@@ -17379,12 +17382,15 @@
         }
       });
 
-      const weekMinutes = days.reduce((sum, day) => sum + day.minutes, 0);
       const weekCoins = days.reduce((sum, day) => sum + day.coins, 0);
       const weekTasks = days.reduce((sum, day) => sum + day.tasks, 0);
+      const weekDayKeys = new Set(days.map(day => day.key));
+      const weekUnlockedCities = Object.entries(state.travel?.cityUnlocks || {})
+        .filter(([cityId, date]) => cityId !== "tuebingen" && weekDayKeys.has(date))
+        .length;
       const weekFocusStudyWorkMinutes = (categoryTotals.study || 0) + (categoryTotals.work || 0);
       const bestDay = [...days].sort((a, b) => b.minutes - a.minutes)[0];
-      document.querySelector("#weekMinutes").textContent = weekMinutes;
+      document.querySelector("#weekMinutes").textContent = `${weekUnlockedCities} 座`;
       document.querySelector("#weekCoins").textContent = weekCoins;
       document.querySelector("#weeklyTasks").textContent = `${weekTasks} 个`;
       document.querySelector("#weeklyPlanMinutes").textContent = formatMinutes(weekFocusStudyWorkMinutes);
@@ -17525,14 +17531,32 @@
     }
 
     function ensureTravelState() {
-      state.travel ??= { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [] };
+      state.travel ??= { currentCityId: "tuebingen", arrivedCities: ["tuebingen"], tickets: [], cityUnlocks: {} };
       state.travel.currentCityId ??= "tuebingen";
       state.travel.arrivedCities = Array.isArray(state.travel.arrivedCities) ? state.travel.arrivedCities : ["tuebingen"];
       state.travel.tickets = Array.isArray(state.travel.tickets) ? state.travel.tickets : [];
+      state.travel.cityUnlocks = state.travel.cityUnlocks && typeof state.travel.cityUnlocks === "object" && !Array.isArray(state.travel.cityUnlocks)
+        ? state.travel.cityUnlocks
+        : {};
       if (!state.travel.arrivedCities.includes("tuebingen")) state.travel.arrivedCities.unshift("tuebingen");
       if (!state.travel.arrivedCities.includes(state.travel.currentCityId)) state.travel.arrivedCities.push(state.travel.currentCityId);
       const currentCard = cityCardId(state.travel.currentCityId);
       if (!state.ownedRewards.includes(currentCard)) state.ownedRewards.push(currentCard);
+    }
+
+    function recordCityUnlock(cityId, date = todayKey) {
+      if (!cityId || cityId === "tuebingen" || !journeyCityById(cityId)) return false;
+      ensureTravelState();
+      if (!state.travel.arrivedCities.includes(cityId)) state.travel.arrivedCities.push(cityId);
+      if (state.travel.cityUnlocks[cityId]) return false;
+      state.travel.cityUnlocks[cityId] = date;
+      return true;
+    }
+
+    function recordCityUnlockFromItem(item) {
+      if (item?.category !== "city") return false;
+      const cityId = item.routeCityId || item.id?.replace(/-card$/, "");
+      return recordCityUnlock(cityId);
     }
 
     function currentJourneyIndex() {
@@ -18738,7 +18762,7 @@
       if (!state.travel.tickets.includes(ticket.id)) state.travel.tickets.push(ticket.id);
       if (!state.ownedRewards.includes(ticket.id)) state.ownedRewards.push(ticket.id);
       state.travel.currentCityId = ticket.to.id;
-      if (!state.travel.arrivedCities.includes(ticket.to.id)) state.travel.arrivedCities.push(ticket.to.id);
+      recordCityUnlock(ticket.to.id);
       const nextCardId = cityCardId(ticket.to.id);
       if (!state.ownedRewards.includes(nextCardId)) state.ownedRewards.push(nextCardId);
       selectedRewardId = nextCardId;
@@ -19510,6 +19534,7 @@
           spendCoins(deposit, `存入「${item.name}」基金`);
           if (state.funds[item.id] >= item.price) {
             state.ownedRewards.push(item.id);
+            recordCityUnlockFromItem(item);
             selectedRewardId = item.id;
             showToast(`基金已存满，小猪盖下 ${item.stamp} 章！`);
           } else {
@@ -19526,6 +19551,7 @@
       }
       if (item.price > 0 && !window.confirm(`确认花费 ${item.price} 金币兑换「${item.name}」吗？`)) return;
       state.ownedRewards.push(item.id);
+      recordCityUnlockFromItem(item);
       selectedRewardId = item.id;
       spendCoins(item.price, `购买「${item.name}」`);
       state.wishlist = state.wishlist.filter(id => id !== item.id);
