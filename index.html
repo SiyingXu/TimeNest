@@ -5168,7 +5168,7 @@
       timeLogs: [],
       tasks: [],
       photoArchive: [],
-      sync: { updatedAt: new Date().toISOString(), mutations: [] },
+      sync: { updatedAt: new Date().toISOString(), mutations: [], deleted: {} },
       history: [{ text: "图宾根旅行基金", amount: 300, time: "今天", date: todayKey }]
     };
 
@@ -17449,6 +17449,14 @@
         : { updatedAt: new Date().toISOString(), mutations: [] };
       parsed.sync.updatedAt ||= new Date().toISOString();
       parsed.sync.mutations = Array.isArray(parsed.sync.mutations) ? parsed.sync.mutations.slice(-200) : [];
+      parsed.sync.deleted = parsed.sync.deleted && typeof parsed.sync.deleted === "object" && !Array.isArray(parsed.sync.deleted)
+        ? parsed.sync.deleted
+        : {};
+      ["tasks", "plans", "timeLogs", "photoArchive", "records"].forEach(collection => {
+        parsed.sync.deleted[collection] = Array.isArray(parsed.sync.deleted[collection])
+          ? [...new Set(parsed.sync.deleted[collection].filter(Boolean))].slice(-500)
+          : [];
+      });
       parsed.plans = parsed.plans.map(plan => ({ ...plan, taskId: plan.taskId || null, category: plan.category || "study" }));
       parsed.timeLogs = parsed.timeLogs.map(log => ({
         ...log,
@@ -17474,7 +17482,8 @@
       delete snapshot.devMode;
       snapshot.sync = {
         updatedAt: snapshot.sync?.updatedAt || new Date().toISOString(),
-        mutations: []
+        mutations: [],
+        deleted: snapshot.sync?.deleted || {}
       };
       return snapshot;
     }
@@ -17773,25 +17782,55 @@
       return [...rows.values()];
     }
 
+    function mergeDeleted(left = {}, right = {}) {
+      const deleted = {};
+      ["tasks", "plans", "timeLogs", "photoArchive", "records"].forEach(collection => {
+        deleted[collection] = mergeUnique(left?.[collection], right?.[collection]).slice(-500);
+      });
+      return deleted;
+    }
+
+    function withoutDeleted(items = [], deletedIds = []) {
+      const deleted = new Set(deletedIds || []);
+      return (Array.isArray(items) ? items : []).filter(item => !deleted.has(item?.id));
+    }
+
+    function withoutDeletedRecords(items = [], deleted = {}) {
+      const deletedRecords = new Set(deleted.records || []);
+      const deletedPlans = new Set(deleted.plans || []);
+      const deletedTimeLogs = new Set(deleted.timeLogs || []);
+      const deletedTasks = new Set(deleted.tasks || []);
+      return (Array.isArray(items) ? items : []).filter(record => {
+        if (!record || typeof record !== "object") return false;
+        if (record.id && deletedRecords.has(record.id)) return false;
+        if (record.planId && deletedPlans.has(record.planId)) return false;
+        if (record.logId && deletedTimeLogs.has(record.logId)) return false;
+        if (record.taskId && deletedTasks.has(record.taskId)) return false;
+        return true;
+      });
+    }
+
     function mergeState(local, remote) {
       const localUpdated = Date.parse(local?.sync?.updatedAt || 0);
       const remoteUpdated = Date.parse(remote?.sync?.updatedAt || 0);
       const base = remoteUpdated > localUpdated ? structuredClone(remote) : structuredClone(local);
+      const deleted = mergeDeleted(local?.sync?.deleted, remote?.sync?.deleted);
       base.ownedRewards = mergeUnique(local?.ownedRewards, remote?.ownedRewards);
       base.wishlist = mergeUnique(local?.wishlist, remote?.wishlist);
       base.chapterRewards = mergeUnique(local?.chapterRewards, remote?.chapterRewards);
-      base.records = mergeById(local?.records, remote?.records).slice(-500);
-      base.timeLogs = mergeById(local?.timeLogs, remote?.timeLogs);
-      base.tasks = mergeById(local?.tasks, remote?.tasks);
-      base.plans = mergeById(local?.plans, remote?.plans);
-      base.photoArchive = mergeById(local?.photoArchive, remote?.photoArchive);
+      base.records = withoutDeletedRecords(mergeById(local?.records, remote?.records), deleted).slice(-500);
+      base.timeLogs = withoutDeleted(mergeById(local?.timeLogs, remote?.timeLogs), deleted.timeLogs);
+      base.tasks = withoutDeleted(mergeById(local?.tasks, remote?.tasks), deleted.tasks);
+      base.plans = withoutDeleted(mergeById(local?.plans, remote?.plans), deleted.plans);
+      base.photoArchive = withoutDeleted(mergeById(local?.photoArchive, remote?.photoArchive), deleted.photoArchive);
       base.travel ??= {};
       base.travel.arrivedCities = mergeUnique(local?.travel?.arrivedCities, remote?.travel?.arrivedCities);
       base.travel.tickets = mergeUnique(local?.travel?.tickets, remote?.travel?.tickets);
       base.travel.cityUnlocks = { ...(local?.travel?.cityUnlocks || {}), ...(remote?.travel?.cityUnlocks || {}) };
       base.sync = {
         updatedAt: new Date(Math.max(localUpdated || 0, remoteUpdated || 0, Date.now())).toISOString(),
-        mutations: mergeUnique(local?.sync?.mutations, remote?.sync?.mutations).slice(-200)
+        mutations: mergeUnique(local?.sync?.mutations, remote?.sync?.mutations).slice(-200),
+        deleted
       };
       return base;
     }
@@ -17806,6 +17845,15 @@
         syncState.queueMutation({ type: options.type || "state-save", payload: options.payload || null }, options);
       }
       localStorage.setItem(stateStorageKey, JSON.stringify(state));
+    }
+
+    function markDeleted(collection, ids) {
+      const list = Array.isArray(ids) ? ids : [ids];
+      const clean = list.filter(Boolean);
+      if (!clean.length) return;
+      state.sync ??= { updatedAt: new Date().toISOString(), mutations: [], deleted: {} };
+      state.sync.deleted ??= {};
+      state.sync.deleted[collection] = mergeUnique(state.sync.deleted[collection], clean).slice(-500);
     }
 
     function freshTestState() {
@@ -18512,6 +18560,7 @@
       const record = state.photoArchive.find(item => item.id === id);
       if (!record) return;
       if (!window.confirm(`确认删除「${record.city || "未命名地点"}」吗？`)) return;
+      markDeleted("photoArchive", id);
       state.photoArchive = state.photoArchive.filter(item => item.id !== id);
       if (editingPhotoId === id) {
         editingPhotoId = null;
@@ -20853,6 +20902,7 @@
       if (task.done) {
         undoTask(task);
       }
+      markDeleted("tasks", id);
       state.tasks = state.tasks.filter(item => item.id !== id);
       if (editingTaskId === id) editingTaskId = null;
       saveState();
@@ -21040,6 +21090,7 @@
       const log = state.timeLogs.find(item => item.id === id);
       if (!log) return;
       settleTimeLogReward({ ...log, category: "daily", reward: { minutes: 0, coins: 0 } }, log.reward || { minutes: 0, coins: 0 });
+      markDeleted("timeLogs", id);
       state.timeLogs = state.timeLogs.filter(item => item.id !== id);
       if (editingTimeLogId === id) resetPlanForm();
       saveState();
@@ -21154,6 +21205,9 @@
     function deletePlan(id) {
       const plan = state.plans.find(item => item.id === id);
       if (!plan) return;
+      const linkedLogIds = state.timeLogs.filter(log => log.planId === id).map(log => log.id);
+      markDeleted("plans", id);
+      markDeleted("timeLogs", linkedLogIds);
       state.plans = state.plans.filter(item => item.id !== id);
       state.records = state.records.filter(record => record.planId !== id);
       state.timeLogs
