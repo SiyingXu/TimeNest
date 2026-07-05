@@ -1796,30 +1796,35 @@
     }
 
     .collect-card.asset-card {
+      width: min(420px, calc(100vw - 36px));
+      aspect-ratio: auto;
+      max-height: calc(100vh - 36px);
       border: 8px solid #c08a3d;
       background:
         linear-gradient(180deg, #fffdf8, #fff4e4);
       box-shadow: 0 24px 60px rgba(31,41,55,.32);
       display: grid;
-      grid-template-rows: 1fr auto;
+      grid-template-rows: auto auto;
       padding: 8px;
       gap: 8px;
     }
 
     .collect-card.asset-card img {
       width: 100%;
-      height: 100%;
-      min-height: 0;
+      height: auto;
+      max-height: calc(100vh - 180px);
       display: block;
       border-radius: 8px;
-      object-fit: cover;
+      object-fit: contain;
       border: 1px solid rgba(31,41,55,.12);
+      background: #fff7ec;
     }
 
     .modal-card-art {
       width: 100%;
-      height: 100%;
-      min-height: 0;
+      height: auto;
+      aspect-ratio: 3 / 4;
+      max-height: calc(100vh - 180px);
       border-radius: 8px;
       border: 1px solid rgba(31,41,55,.12);
       background:
@@ -19778,6 +19783,6 @@
     openRouteFromHash();
     updateTimerDisplay();
   </script>
-  <!-- deploy: recrop first chapter cards v122 -->
+  <!-- deploy: show full card previews v123 -->
 </body>
 </html>
