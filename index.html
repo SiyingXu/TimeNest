@@ -5032,7 +5032,8 @@
     const devParams = new URLSearchParams(window.location.search);
     const appScope = location.pathname.includes("/TimeNest-dev") ? "dev" : "prod";
     const storagePrefix = `TimeNest:${appScope}`;
-    const stateStorageKey = `${storagePrefix}:State`;
+    const storageSchemaVersion = "v2";
+    const stateStorageKey = `${storagePrefix}:State:${storageSchemaVersion}`;
     const devModeKey = "TimeNestDevMode";
     const devMode = devParams.get("dev") === "1" || localStorage.getItem(devModeKey) === "true";
     const ENABLE_TEST_TOOLS = devMode;
@@ -17310,11 +17311,7 @@
     }
 
     function loadState() {
-      let saved = localStorage.getItem(stateStorageKey);
-      if (!saved && appScope === "prod") {
-        saved = localStorage.getItem("TimeNestState") || localStorage.getItem("timeNestState");
-        if (saved) localStorage.setItem(stateStorageKey, saved);
-      }
+      const saved = localStorage.getItem(stateStorageKey);
       if (!saved) return structuredClone(defaultState);
       const parsed = JSON.parse(saved);
       parsed.ownedRewards ??= Array.isArray(parsed.ownedRewards) ? parsed.ownedRewards : [];
@@ -17830,7 +17827,8 @@
     function renderAuthStatus() {
       const button = document.querySelector("#accountButton");
       if (!button) return;
-      button.textContent = syncConfig.username ? `${syncConfig.username} · ${appScope}` : `登录 · ${appScope}`;
+      const scopeLabel = appScope === "dev" ? " · dev" : "";
+      button.textContent = syncConfig.username ? `${syncConfig.username}${scopeLabel}` : `登录${scopeLabel}`;
       button.title = syncConfig.username ? "账号同步已登录" : "登录后可跨设备同步";
     }
 
@@ -19161,8 +19159,55 @@
       return cityMapAssets[cityId] ? `${cityId}-city` : "world";
     }
 
+    function isAccountSignedIn() {
+      return Boolean(syncConfig.userId && syncConfig.accessToken);
+    }
+
+    function requireLoginForTravelAction() {
+      if (isAccountSignedIn()) return false;
+      showToast("请先登录账号，再开启旅行和购买小猪护照。");
+      openAuthModal();
+      return true;
+    }
+
+    function renderTravelLoginGate() {
+      selectedRewardId = "pig-passport";
+      const rewardsView = document.querySelector("#rewards-view");
+      rewardsView?.classList.toggle("city-exploring", true);
+      rewardsView?.classList.toggle("route-exploring", false);
+      const map = document.querySelector("#worldMap");
+      map.className = "world-map";
+      map.style.removeProperty("--city-map-image");
+      map.innerHTML = `
+        <div class="map-trail"><span class="active">账号同步</span></div>
+        <div class="passport-gate-card">
+          <strong>先登录，再开启旅行</strong>
+          <span>旅行进度会跟随账号同步。登录后再购买小猪护照，金币、卡牌、城市进度和记录就能在不同设备恢复。</span>
+          <button class="primary" id="travelLoginButton" type="button">登录</button>
+        </div>
+      `;
+      document.querySelector("#travelLoginButton")?.addEventListener("click", openAuthModal);
+      const panel = document.querySelector("#journeyPanel");
+      if (panel) {
+        panel.innerHTML = `
+          <div class="journey-head">
+            <div>
+              <strong>环球之旅</strong>
+              <span>登录后启程</span>
+            </div>
+            <div class="map-chip">0%</div>
+          </div>
+          <div class="journey-progress" aria-label="环球路线进度"><div style="--progress:0%"></div></div>
+          <div class="journey-copy">为了避免本地测试进度覆盖正式进度，旅行功能需要先登录账号。</div>
+        `;
+      }
+      renderPassportPurchaseCard(shopItems.find(item => item.id === "pig-passport"));
+      requestAnimationFrame(syncTravelPanelHeight);
+    }
+
     function openJourneyCity(city) {
       if (!city) return;
+      if (requireLoginForTravelAction()) return;
       if (confirmJumpToCityForTesting(city)) return;
       const card = journeyCityCard(city.id);
       if (!card) return;
@@ -19349,6 +19394,10 @@
       if (cityCount) cityCount.textContent = ownedRewardsBy("city").length;
       if (ticketCount) ticketCount.textContent = ownedTicketCount();
       if (wishCount) wishCount.textContent = ownedRewardsBy("wish").length;
+      if (!isAccountSignedIn()) {
+        renderTravelLoginGate();
+        return;
+      }
       const passportItem = shopItems.find(item => item.id === "pig-passport");
       if (passportItem && !isOwned(passportItem)) {
         selectedRewardId = "pig-passport";
@@ -20153,6 +20202,7 @@
     }
 
     function buyTravelTicket() {
+      if (requireLoginForTravelAction()) return;
       const ticket = currentTravelTicket();
       if (!ticket) {
         showToast("环球路线已经完成啦。");
@@ -20927,6 +20977,7 @@
     }
 
     function buyItem(item) {
+      if (item && ["city", "ticket", "sight", "wish"].includes(item.category) && requireLoginForTravelAction()) return;
       if (isOwned(item)) {
         showToast(`已经在卡册里：${item.name}`);
         return;

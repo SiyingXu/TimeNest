@@ -100,9 +100,10 @@ Implementation details:
 - The app maps a username to an internal Auth email: `<username>@timenest.local`.
 - Passwords are handled by Supabase Auth; the static app never stores password hashes.
 - Local storage is scoped by app:
-  - Production: `TimeNest:prod:State`
-  - Dev: `TimeNest:dev:State`
+  - Production: `TimeNest:prod:State:v2`
+  - Dev: `TimeNest:dev:State:v2`
 - Cloud state is also scoped by `app_scope`, so one account can have separate production and dev progress.
+- Legacy unscoped state keys are not imported automatically; this keeps old test progress from leaking into production.
 
 Supabase setup:
 
@@ -128,7 +129,7 @@ localStorage["TimeNest:dev:SupabaseAnonKey"] = "<anon-key>";
 
 Login behavior:
 
-- Anonymous local progress remains available offline.
+- Tasks, timer, and local records remain available offline; travel start and pig passport purchase require login.
 - After login/register, local progress is merged with cloud progress and pushed back.
 - Subsequent saves write local state first, then queue cloud sync.
 - If offline, the local app remains usable and sync resumes when online.
