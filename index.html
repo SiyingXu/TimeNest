@@ -473,12 +473,12 @@
       width: calc(var(--lane-width, 100%) - 8px);
       top: var(--top);
       height: var(--height);
-      min-height: 32px;
+      min-height: 44px;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 2px;
+      gap: 3px;
       align-items: start;
-      padding: 6px 7px 6px 9px;
+      padding: 7px 8px 7px 9px;
       border: 1px solid var(--item-border, rgba(227,107,127,.28));
       border-left: 6px solid var(--item-accent, var(--rose));
       border-radius: 8px;
@@ -490,6 +490,11 @@
 
     .plan-item.done {
       opacity: .92;
+    }
+
+    .plan-item.done .plan-title,
+    .plan-item.done .plan-meta {
+      color: #64748b;
     }
 
     .record-item {
@@ -18360,7 +18365,7 @@
         const id = stableItemKey(item);
         if (!id) return;
         const existing = rows.get(id);
-        if (!existing || Date.parse(item.updatedAt || item.createdAt || item.ts || 0) >= Date.parse(existing.updatedAt || existing.createdAt || existing.ts || 0)) {
+        if (!existing || Date.parse(item.updatedAt || item.createdAt || item.ts || 0) > Date.parse(existing.updatedAt || existing.createdAt || existing.ts || 0)) {
           rows.set(id, item);
         }
       });
@@ -19439,7 +19444,7 @@
         if (visibleEnd <= timelineStart || visibleStart >= timelineEnd) return null;
         const top = (visibleStart - timelineStart) / timelineMinutes * 100;
         const visibleMinutes = Math.max(15, visibleEnd - visibleStart);
-        const minHeight = 32 / 810 * 100;
+        const minHeight = 44 / 810 * 100;
         const height = Math.min(100 - top, Math.max(minHeight, visibleMinutes / timelineMinutes * 100));
         const laneEnd = top + height;
         return { start, end, visibleStart, visibleEnd, top, height, laneEnd };
@@ -21512,12 +21517,14 @@
         return;
       }
       task.done = true;
+      task.updatedAt = new Date().toISOString();
       state.todayDone += 1;
       addCoins(task.reward, `完成「${task.name}」`, { kind: "task", taskId: task.id });
     }
 
     function undoTask(task, options = {}) {
       task.done = false;
+      task.updatedAt = new Date().toISOString();
       state.todayDone = Math.max(0, state.todayDone - 1);
       const recordIndex = [...state.records].reverse().findIndex(record =>
         record.kind === "task" && (record.taskId === task.id || record.label === `完成「${task.name}」`)
@@ -21568,6 +21575,7 @@
       }
       task.name = name;
       task.reward = Number(row.querySelector('[data-field="reward"]').value);
+      task.updatedAt = new Date().toISOString();
       editingTaskId = null;
       saveState();
       render();
@@ -21720,10 +21728,11 @@
         existing.minutes = minutes;
         existing.taskId = taskId;
         existing.category = category;
+        existing.updatedAt = new Date().toISOString();
         if (!skipReward) settleTimeLogReward(existing, previousReward);
         return existing;
       }
-      const log = { id: makeId(), title, start, end, minutes, planId, taskId, category, reward: { minutes: 0, coins: 0 }, date: todayKey };
+      const log = { id: makeId(), title, start, end, minutes, planId, taskId, category, reward: { minutes: 0, coins: 0 }, date: todayKey, updatedAt: new Date().toISOString() };
       state.timeLogs.push(log);
       if (!skipReward) settleTimeLogReward(log);
       return log;
@@ -21767,6 +21776,7 @@
         return;
       }
       plan.done = true;
+      plan.updatedAt = new Date().toISOString();
       addTimeLog({ title: plan.title, start: plan.start, end: plan.end, planId: plan.id, taskId: plan.taskId, category: plan.category || "study" });
       state.records.push({
         kind: "plan",
@@ -21781,6 +21791,7 @@
       const linkedTask = plan.taskId ? state.tasks.find(task => task.id === plan.taskId) : null;
       if (linkedTask && !linkedTask.done) {
         linkedTask.done = true;
+        linkedTask.updatedAt = new Date().toISOString();
         state.todayDone += 1;
         state.coins += linkedTask.reward;
         state.history.unshift({
@@ -21809,6 +21820,7 @@
 
     function undoPlan(plan) {
       plan.done = false;
+      plan.updatedAt = new Date().toISOString();
       const linkedTask = plan.taskId ? state.tasks.find(task => task.id === plan.taskId) : null;
       const completedTaskFromPlan = linkedTask && state.records.some(record =>
         record.kind === "task" && record.taskId === linkedTask.id && record.fromPlanId === plan.id
@@ -22048,7 +22060,8 @@
         id: makeId(),
         name,
         reward: Number(document.querySelector("#taskReward").value),
-        done: false
+        done: false,
+        updatedAt: new Date().toISOString()
       });
       input.value = "";
       saveState();
@@ -22078,6 +22091,7 @@
           plan.minutes = minutes;
           plan.taskId = planningTaskId;
           plan.category = category;
+          plan.updatedAt = new Date().toISOString();
           if (plan.done) {
             state.records = state.records.map(record => record.planId === plan.id
               ? { ...record, label: title, minutes }
@@ -22089,7 +22103,7 @@
         resetPlanForm();
         showToast(`已保存修改：${title}`);
       } else {
-        state.plans.push({ id: makeId(), title, start, end, minutes, done: false, taskId: planningTaskId, category });
+        state.plans.push({ id: makeId(), title, start, end, minutes, done: false, taskId: planningTaskId, category, updatedAt: new Date().toISOString() });
         resetPlanForm();
         showToast(`已加入计划：${title}`);
       }
