@@ -5129,6 +5129,7 @@
     const storagePrefix = `TimeNest:${appScope}`;
     const storageSchemaVersion = "v2";
     const stateStorageKey = `${storagePrefix}:State:${storageSchemaVersion}`;
+    const stateBackupStorageKey = `${storagePrefix}:StateBackup:${storageSchemaVersion}`;
     const embeddedSupabaseConfig = {
       url: "https://kelkntpunwdxxereygce.supabase.co",
       anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlbGtudHB1bndkeHhlcmV5Z2NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNjM0NDYsImV4cCI6MjA5ODgzOTQ0Nn0.zzeZL8ecLqHntK8ujy-aly3YOr8TV4qhcfMCP6R23ZE"
@@ -18243,6 +18244,7 @@
         const rows = await response.json();
         const remote = rows[0]?.state || null;
         if (remote) {
+          backupLocalState("before-cloud-merge");
           state = mergeState(state, remote);
           localStorage.setItem(stateStorageKey, JSON.stringify(state));
           render();
@@ -18311,21 +18313,87 @@
       }
     };
 
+    function backupLocalState(reason = "manual") {
+      try {
+        const backups = JSON.parse(localStorage.getItem(stateBackupStorageKey) || "[]");
+        backups.unshift({
+          reason,
+          at: new Date().toISOString(),
+          state: publicStateSnapshot()
+        });
+        localStorage.setItem(stateBackupStorageKey, JSON.stringify(backups.slice(0, 5)));
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
     function mergeUnique(left = [], right = []) {
       return [...new Set([...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])])];
+    }
+
+    function stableItemKey(item) {
+      if (!item || typeof item !== "object") return "";
+      if (item.id) return `id:${item.id}`;
+      return [
+        item.kind || "row",
+        item.logId || "",
+        item.planId || "",
+        item.taskId || "",
+        item.fromPlanId || "",
+        item.label || item.title || item.name || item.text || "",
+        item.date || "",
+        item.time || "",
+        item.start || "",
+        item.end || "",
+        item.ts || "",
+        item.coins ?? "",
+        item.amount ?? "",
+        item.minutes ?? ""
+      ].join("|");
     }
 
     function mergeById(left = [], right = []) {
       const rows = new Map();
       [...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])].forEach(item => {
         if (!item || typeof item !== "object") return;
-        const id = item.id || `${item.kind || "row"}-${item.ts || item.date || Math.random()}`;
+        const id = stableItemKey(item);
+        if (!id) return;
         const existing = rows.get(id);
         if (!existing || Date.parse(item.updatedAt || item.createdAt || item.ts || 0) >= Date.parse(existing.updatedAt || existing.createdAt || existing.ts || 0)) {
           rows.set(id, item);
         }
       });
       return [...rows.values()];
+    }
+
+    function mergeHistory(left = [], right = []) {
+      return mergeById(left, right)
+        .sort((a, b) => Date.parse(b.date || 0) - Date.parse(a.date || 0))
+        .slice(0, 8);
+    }
+
+    function stateActivityScore(source = {}) {
+      return [
+        source.records,
+        source.timeLogs,
+        source.plans,
+        source.tasks,
+        source.photoArchive,
+        source.ownedRewards,
+        source.wishlist,
+        source.chapterRewards,
+        source.travel?.arrivedCities,
+        source.travel?.tickets
+      ].reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0)
+        + Object.keys(source.funds || {}).length
+        + Object.keys(source.travel?.cityUnlocks || {}).length;
+    }
+
+    function pickFromMoreComplete(local, remote, field, localUpdated, remoteUpdated) {
+      const localScore = stateActivityScore(local);
+      const remoteScore = stateActivityScore(remote);
+      if (localScore !== remoteScore) return localScore > remoteScore ? local?.[field] : remote?.[field];
+      return remoteUpdated > localUpdated ? remote?.[field] : local?.[field];
     }
 
     function mergeDeleted(left = {}, right = {}) {
@@ -18364,12 +18432,19 @@
       base.ownedRewards = mergeUnique(local?.ownedRewards, remote?.ownedRewards);
       base.wishlist = mergeUnique(local?.wishlist, remote?.wishlist);
       base.chapterRewards = mergeUnique(local?.chapterRewards, remote?.chapterRewards);
-      const newestSnapshot = remoteUpdated > localUpdated ? remote : local;
-      base.records = withoutDeletedRecords(newestSnapshot?.records, deleted).slice(-500);
-      base.timeLogs = withoutDeleted(newestSnapshot?.timeLogs, deleted.timeLogs);
-      base.tasks = withoutDeleted(newestSnapshot?.tasks, deleted.tasks);
-      base.plans = withoutDeleted(newestSnapshot?.plans, deleted.plans);
-      base.photoArchive = withoutDeleted(newestSnapshot?.photoArchive, deleted.photoArchive);
+      base.records = withoutDeletedRecords(mergeById(local?.records, remote?.records), deleted).slice(-500);
+      base.timeLogs = withoutDeleted(mergeById(local?.timeLogs, remote?.timeLogs), deleted.timeLogs);
+      base.tasks = withoutDeleted(mergeById(local?.tasks, remote?.tasks), deleted.tasks);
+      base.plans = withoutDeleted(mergeById(local?.plans, remote?.plans), deleted.plans);
+      base.photoArchive = withoutDeleted(mergeById(local?.photoArchive, remote?.photoArchive), deleted.photoArchive);
+      base.history = mergeHistory(local?.history, remote?.history);
+      base.coins = pickFromMoreComplete(local, remote, "coins", localUpdated, remoteUpdated) ?? base.coins ?? 300;
+      base.focusMinutes = pickFromMoreComplete(local, remote, "focusMinutes", localUpdated, remoteUpdated) ?? base.focusMinutes ?? 0;
+      base.todayDone = pickFromMoreComplete(local, remote, "todayDone", localUpdated, remoteUpdated) ?? base.todayDone ?? 0;
+      base.funds = { ...(local?.funds || {}) };
+      Object.entries(remote?.funds || {}).forEach(([id, amount]) => {
+        base.funds[id] = Math.max(Number(base.funds[id]) || 0, Number(amount) || 0);
+      });
       base.travel ??= {};
       base.travel.arrivedCities = mergeUnique(local?.travel?.arrivedCities, remote?.travel?.arrivedCities);
       base.travel.tickets = mergeUnique(local?.travel?.tickets, remote?.travel?.tickets);
